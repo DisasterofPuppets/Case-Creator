@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<template id="__bundler_thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#e85d1f"/><g fill="#fff3ea"><rect x="40" y="40" width="52" height="52" rx="4"/><rect x="108" y="40" width="52" height="52" rx="4" opacity="0.55"/><rect x="40" y="108" width="52" height="52" rx="4" opacity="0.55"/><rect x="108" y="108" width="52" height="52" rx="4"/></g></svg>
+</template>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#f7f3ec;color:#1c1814;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#d95511;text-decoration:none}a:hover{color:#b04309;text-decoration:underline}
+input,select,button,textarea{font-family:inherit}
+@keyframes demoDrawCursor{0%{left:6px;top:6px}55%,100%{left:66px;top:66px}}
+@keyframes demoDrawRect{0%{width:0;height:0}55%,100%{width:60px;height:60px}}
+@keyframes demoMoveCursor{0%{left:16px;top:16px}55%,100%{left:76px;top:16px}}
+@keyframes demoMoveTile{0%{left:6px;top:6px}55%,100%{left:66px;top:6px}}
+@keyframes demoResizeCursor{0%{left:66px;top:66px}55%,100%{left:96px;top:96px}}
+@keyframes demoResizeTile{0%{width:60px;height:60px}55%,100%{width:90px;height:90px}}
+@keyframes demoDeleteTile{0%{opacity:1;transform:scale(1)}45%,100%{opacity:0;transform:scale(0.4)}}
+@keyframes demoDeleteCursor{0%{opacity:1;transform:scale(1)}45%,100%{opacity:0;transform:scale(1.6)}}
+</style>
+</helmet>
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:999;background:#1c1814;color:#fff;font-weight:700;font-size:13px;padding:12px 20px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.25)">{{ toast }}</div>
+</sc-if>
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 16px 80px">
+  <div style="width:100%;max-width:1040px;display:flex;flex-direction:column;gap:20px">
+
+    <header style="display:flex;align-items:center;gap:12px;padding:22px 0 4px">
+      <div style="width:38px;height:38px;background:#e85d1f;border-radius:8px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;padding:6px;box-sizing:border-box">
+        <div style="background:#fff3ea;border-radius:2px"></div>
+        <div style="background:#fff3ea;border-radius:2px;opacity:0.55"></div>
+        <div style="background:#fff3ea;border-radius:2px;opacity:0.55"></div>
+        <div style="background:#fff3ea;border-radius:2px"></div>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em">Case Creator</div>
+        <div style="font-size:12px;color:#7a6f61;font-family:'IBM Plex Mono',monospace">Make → Maintain → Map</div>
+      </div>
+    </header>
+
+    <nav style="display:flex;gap:8px;flex-wrap:wrap">
+      <button onClick="{{ goSearch }}" style="{{ navStyles.search }}" style-hover="border-color:#e85d1f">Search</button>
+      <button onClick="{{ goBuilder }}" style="{{ navStyles.builder }}" style-hover="border-color:#e85d1f">Case Builder</button>
+      <button onClick="{{ goMap }}" style="{{ navStyles.map }}" style-hover="border-color:#e85d1f">View Cases</button>
+      <button onClick="{{ goImportExport }}" style="{{ navStyles.importexport }}" style-hover="border-color:#e85d1f">Import / Export</button>
+      <button onClick="{{ goHelp }}" style="{{ navStyles.help }}" style-hover="border-color:#e85d1f">Help</button>
+    </nav>
+
+    <sc-if value="{{ showBuilder }}" hint-placeholder-val="{{ false }}">
+    <section data-screen-label="Case Builder" style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+        <div style="font-size:11px;font-weight:800;letter-spacing:0.08em;color:#a0958a;text-transform:uppercase">=== Create a New Case ===</div>
+        <button onClick="{{ createBlank }}" style="background:#e85d1f;color:#fff;border:none;border-radius:8px;padding:12px 22px;font-weight:700;font-size:15px;cursor:pointer" style-hover="background:#d95511">Create a New Case</button>
+        <sc-if value="{{ hasSavedCases }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:12px;font-weight:700;color:#a0958a">- OR -</div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:0.08em;color:#a0958a;text-transform:uppercase">=== Edit an Existing Case ===</div>
+        <select value="{{ builderCaseId }}" onChange="{{ onBuilderCase }}" style="padding:10px;border:1px solid #d9cdba;border-radius:8px;background:#fff;font-size:15px;width:100%;max-width:320px">
+          <option value="">Select a case…</option>
+          <sc-for list="{{ savedCases }}" as="c" hint-placeholder-count="1">
+            <option value="{{ c.id }}">{{ c.name }}</option>
+          </sc-for>
+        </select>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ hasBuilderCase }}" hint-placeholder-val="{{ true }}">
+
+        <sc-if value="{{ isNewCase }}" hint-placeholder-val="{{ true }}">
+        <input value="{{ builderTitle }}" onChange="{{ onBuilderTitle }}" placeholder="Case name" style="border:none;background:transparent;font-size:26px;font-weight:800;letter-spacing:-0.01em;padding:4px 0;width:100%;box-sizing:border-box" style-focus="outline:none;border-bottom:2px solid #e85d1f">
+        </sc-if>
+        <sc-if value="{{ isExistingCase }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:26px;font-weight:800;letter-spacing:-0.01em;padding:4px 0">Editing {{ builderTitle }}</div>
+        </sc-if>
+
+        <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:700;color:#7a6f61;font-family:'IBM Plex Mono',monospace;flex:1;min-width:120px">{{ refName }}</span>
+            <label style="border:1px solid #d9cdba;background:#fff;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer" style-hover="border-color:#e85d1f">
+              + Add image(s)<input type="file" accept="image/*" multiple="{{ true }}" onChange="{{ onRefUpload }}" style="display:none">
+            </label>
+            <sc-if value="{{ refShow }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ zoomOut }}" title="Zoom out" style="width:26px;height:26px;border-radius:6px;border:1px solid #d9cdba;background:#fff;font-weight:800;cursor:pointer">−</button>
+              <button onClick="{{ zoomIn }}" title="Zoom in" style="width:26px;height:26px;border-radius:6px;border:1px solid #d9cdba;background:#fff;font-weight:800;cursor:pointer">+</button>
+              <button onClick="{{ zoomReset }}" title="Reset zoom / pan" style="border:1px solid #d9cdba;background:#fff;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer">Reset</button>
+            </sc-if>
+            <button onClick="{{ toggleRefOn }}" disabled="{{ refDisabled }}" style="{{ refToggleStyle }}">{{ refToggleLabel }}</button>
+          </div>
+          <sc-if value="{{ refShow }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ refViewportStyle }}" ref="{{ refViewportRef }}" onWheel="{{ onRefWheel }}" onPointerDown="{{ onRefDown }}" onPointerMove="{{ onRefMove }}" onPointerUp="{{ onRefUp }}" onPointerCancel="{{ onRefUp }}">
+              <img src="{{ refSrc }}" draggable="false" style="{{ refImgStyle }}">
+              <sc-if value="{{ refHasMulti }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ refPrev }}" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:none;background:rgba(28,24,20,0.65);color:#fff;font-size:16px;cursor:pointer">‹</button>
+                <button onClick="{{ refNext }}" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:none;background:rgba(28,24,20,0.65);color:#fff;font-size:16px;cursor:pointer">›</button>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:10px 12px">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+            <sc-for list="{{ keyRows }}" as="kr" hint-placeholder-count="1">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="{{ kr.boxStyle }}"></span>
+                <span style="font-size:12px;font-weight:600;color:#7a6f61;white-space:nowrap">{{ kr.name }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:1"></div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#7a6f61;white-space:nowrap">
+            <input type="checkbox" checked="{{ showGhosts }}" onChange="{{ onShowGhosts }}">Ghost bins
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#7a6f61;white-space:nowrap">
+            <input type="checkbox" checked="{{ coordsOn }}" onChange="{{ onCoordsOn }}">Coordinates
+          </label>
+          <button onClick="{{ toggleHelp }}" title="Mouse controls help" style="width:28px;height:28px;border-radius:50%;border:1px solid #d9cdba;background:#fff;font-weight:800;font-size:13px;cursor:pointer;color:#7a6f61">?</button>
+        </div>
+
+        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+          <div style="flex:2;min-width:320px;display:flex;gap:10px">
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+              <sc-for list="{{ levelTabs }}" as="lt" hint-placeholder-count="1">
+                <div draggable="{{ true }}" onDragStart="{{ lt.onDragStart }}" onDragOver="{{ lt.onDragOver }}" onDrop="{{ lt.onDrop }}" onDragEnd="{{ lt.onDragEnd }}" style="{{ lt.wrapStyle }}">
+                  <span style="{{ lt.arrowStyle }}">▶</span>
+                  <input type="color" value="{{ lt.color }}" onChange="{{ lt.onColor }}" title="Level colour" style="width:18px;height:18px;padding:0;border:none;background:none;cursor:pointer">
+                  <button onClick="{{ lt.on }}" title="Click to switch, shift-click to view multiple levels together" style="{{ lt.style }}">{{ lt.name }}</button>
+                  <sc-if value="{{ lt.canRemove }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ lt.onRemove }}" title="Remove level" style="width:18px;height:18px;flex-shrink:0;border:none;background:none;color:#a0958a;font-size:14px;font-weight:800;cursor:pointer;line-height:1" style-hover="color:#b04309">×</button>
+                  </sc-if>
+                </div>
+              </sc-for>
+              <button onClick="{{ addLevel }}" title="Add level" style="border:1px dashed #d9cdba;background:#fff;color:#33591f;border-radius:6px;padding:7px 10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap" style-hover="border-color:#33591f">+ level</button>
+            </div>
+            <div style="flex:1;min-width:0">
+            <div style="display:grid;grid-template-columns:24px 1fr;gap:4px">
+              <div></div>
+              <div style="{{ colHeaderStyle }}">
+                <sc-for list="{{ colHeaders }}" as="ch" hint-placeholder-count="0">
+                  <div style="text-align:center;font-size:13px;font-weight:800;color:#fff;background:#1c1814;border-radius:5px;padding:4px 0;font-family:'IBM Plex Mono',monospace">{{ ch }}</div>
+                </sc-for>
+              </div>
+              <div style="{{ rowHeaderStyle }}">
+                <sc-for list="{{ rowHeaders }}" as="rh" hint-placeholder-count="0">
+                  <div style="display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;background:#1c1814;border-radius:5px;font-family:'IBM Plex Mono',monospace">{{ rh }}</div>
+                </sc-for>
+              </div>
+            <div style="{{ builderGridStyle }}" ref="{{ gridRef }}" onPointerDown="{{ onGridDown }}" onPointerMove="{{ onGridMove }}" onPointerUp="{{ onGridUp }}" onPointerCancel="{{ onGridCancel }}" onContextMenu="{{ onGridContextMenu }}">
+              <sc-for list="{{ gridCells }}" as="cell" hint-placeholder-count="0">
+                <div style="{{ cell.style }}">{{ cell.label }}</div>
+              </sc-for>
+              <sc-for list="{{ ghostTiles }}" as="gt" hint-placeholder-count="0">
+                <div style="{{ gt.style }}">
+                  <div style="font-weight:700;font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ gt.name }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:9px">{{ gt.pos }}</div>
+                </div>
+              </sc-for>
+              <sc-for list="{{ binTiles }}" as="t" hint-placeholder-count="0">
+                <div style="{{ t.style }}">
+                  <div style="font-weight:700;font-size:12px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.name }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:0.9">{{ t.pos }}</div>
+                  <sc-if value="{{ t.multi }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute;top:3px;right:5px;font-size:9px;font-weight:800;background:rgba(0,0,0,0.25);border-radius:3px;padding:1px 4px">{{ t.multiLabel }}</span>
+                  </sc-if>
+                  <sc-if value="{{ t.hasImage }}" hint-placeholder-val="{{ false }}">
+                    <span title="Has a custom image" style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 12px 12px 0;border-color:transparent #2f9e44 transparent transparent"></span>
+                  </sc-if>
+                  <sc-if value="{{ t.hasNotes }}" hint-placeholder-val="{{ false }}">
+                    <span title="Has notes" style="position:absolute;bottom:3px;right:3px;width:11px;height:11px;background:#fff;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5px">
+                      <span style="width:7px;height:1.3px;background:#7a6f61;border-radius:1px"></span>
+                      <span style="width:7px;height:1.3px;background:#7a6f61;border-radius:1px"></span>
+                      <span style="width:5px;height:1.3px;background:#7a6f61;border-radius:1px"></span>
+                    </span>
+                  </sc-if>
+                </div>
+              </sc-for>
+              <sc-if value="{{ painting }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ paintStyle }}"></div>
+              </sc-if>
+              <sc-if value="{{ hoverArrow }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ hoverArrowStyle }}"><span style="background:#1c1814;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:13px;margin:-9px;box-shadow:0 1px 4px rgba(0,0,0,0.3)">{{ hoverArrowChar }}</span></div>
+              </sc-if>
+            </div>
+            </div>
+            </div>
+          </div>
+
+          <div style="width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:10px">
+          <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <button onClick="{{ toggleCaseProps }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;border:none;background:none;padding:0;cursor:pointer;text-align:left">
+                <span style="font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:0.05em;color:#7a6f61">Case Properties</span>
+                <span style="font-size:11px;color:#a0958a;font-weight:700">{{ casePropsToggleLabel }}</span>
+              </button>
+              <sc-if value="{{ casePropsOpen }}" hint-placeholder-val="{{ true }}">
+              <label style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:12px;font-weight:600;color:#7a6f61">Case Name</span>
+                <input value="{{ cfg.name }}" onChange="{{ cfg.onName }}" style="padding:9px;border:1px solid #d9cdba;border-radius:7px;font-size:14px">
+              </label>
+              <div style="display:flex;gap:8px">
+                <label style="display:flex;flex-direction:column;gap:4px;flex:1">
+                  <span style="font-size:12px;font-weight:600;color:#7a6f61">Columns (W)</span>
+                  <input type="number" min="1" value="{{ cfg.cols }}" onChange="{{ cfg.onCols }}" style="padding:9px;border:1px solid #d9cdba;border-radius:7px;font-size:14px;width:100%;box-sizing:border-box">
+                </label>
+                <label style="display:flex;flex-direction:column;gap:4px;flex:1">
+                  <span style="font-size:12px;font-weight:600;color:#7a6f61">Rows (H)</span>
+                  <input type="number" min="1" value="{{ cfg.rows }}" onChange="{{ cfg.onRows }}" style="padding:9px;border:1px solid #d9cdba;border-radius:7px;font-size:14px;width:100%;box-sizing:border-box">
+                </label>
+                <label style="display:flex;flex-direction:column;gap:4px;flex:1">
+                  <span style="font-size:12px;font-weight:600;color:#7a6f61">Levels</span>
+                  <input type="number" min="1" value="{{ cfg.levelCount }}" onChange="{{ cfg.onLevelCount }}" style="padding:9px;border:1px solid #d9cdba;border-radius:7px;font-size:14px;width:100%;box-sizing:border-box">
+                </label>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:12px;font-weight:600;color:#7a6f61">Level names (1 = top)</span>
+                <sc-for list="{{ cfg.levelNames }}" as="ln" hint-placeholder-count="1">
+                  <input value="{{ ln.name }}" onChange="{{ ln.onChange }}" style="padding:7px;border:1px solid #d9cdba;border-radius:6px;font-size:13px">
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;border-top:1px solid #e6dccd;padding-top:10px">
+                <span style="font-size:12px;font-weight:700;color:#7a6f61">Horizontal index (columns)</span>
+                <div style="display:flex;gap:6px">
+                  <select value="{{ cfg.hMode }}" onChange="{{ cfg.onHMode }}" style="padding:7px;border:1px solid #d9cdba;border-radius:6px;font-size:13px;background:#fff;flex:1">
+                    <option value="letter">Letter</option>
+                    <option value="number">Number</option>
+                  </select>
+                  <input value="{{ cfg.hStart }}" onChange="{{ cfg.onHStart }}" placeholder="Start" style="padding:7px;border:1px solid #d9cdba;border-radius:6px;font-size:13px;width:70px">
+                </div>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" checked="{{ cfg.hReverse }}" onChange="{{ cfg.onHReverse }}">Reverse order</label>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:12px;font-weight:700;color:#7a6f61">Vertical index (rows)</span>
+                <div style="display:flex;gap:6px">
+                  <select value="{{ cfg.vMode }}" onChange="{{ cfg.onVMode }}" style="padding:7px;border:1px solid #d9cdba;border-radius:6px;font-size:13px;background:#fff;flex:1">
+                    <option value="number">Number</option>
+                    <option value="letter">Letter</option>
+                  </select>
+                  <input value="{{ cfg.vStart }}" onChange="{{ cfg.onVStart }}" placeholder="Start" style="padding:7px;border:1px solid #d9cdba;border-radius:6px;font-size:13px;width:70px">
+                </div>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" checked="{{ cfg.vReverse }}" onChange="{{ cfg.onVReverse }}">Reverse order</label>
+              </div>
+              </sc-if>
+            </div>
+            <sc-if value="{{ selHas }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid #e6dccd;padding-top:12px">
+                <div style="font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:0.05em;color:#7a6f61">Bin properties</div>
+                <label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#7a6f61;white-space:nowrap">
+                  <input type="checkbox" checked="{{ sel.allLevelsChecked }}" onChange="{{ sel.onAllLevels }}">All levels
+                </label>
+              </div>
+              <label style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:12px;font-weight:600;color:#7a6f61">Label</span>
+                <input value="{{ sel.label }}" onChange="{{ sel.onLabel }}" ref="{{ sel.labelRef }}" placeholder="Unlabeled" style="padding:9px;border:1px solid #d9cdba;border-radius:7px;font-size:14px">
+              </label>
+              <div style="font-size:12px;color:#7a6f61;font-family:'IBM Plex Mono',monospace">Position: {{ sel.posText }}</div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:12px;font-weight:600;color:#7a6f61">Levels occupied</span>
+                <sc-for list="{{ sel.levelChecks }}" as="lc" hint-placeholder-count="1">
+                  <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+                    <input type="checkbox" checked="{{ lc.checked }}" onChange="{{ lc.onChange }}"><span style="{{ lc.dotStyle }}"></span>{{ lc.name }}
+                  </label>
+                </sc-for>
+              </div>
+              <label style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:12px;font-weight:600;color:#7a6f61">Notes</span>
+                <textarea value="{{ sel.notes }}" onChange="{{ sel.onNotes }}" rows="3" style="padding:9px;border:1px solid #d9cdba;border-radius:7px;font-size:13px;resize:vertical"></textarea>
+              </label>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="font-size:12px;font-weight:600;color:#7a6f61">Part image</span>
+                <label style="{{ sel.imgBoxStyle }}" style-hover="border-color:#e85d1f">
+                  <input type="file" accept="image/*" onChange="{{ sel.onImage }}" style="display:none">
+                </label>
+                <span style="font-size:11px;color:#a0958a">200×200 thumbnail. Click to upload — larger images can be cropped.</span>
+              </div>
+            </sc-if>
+          </div>
+          <button onClick="{{ exportCase }}" style="border:none;background:#1c1814;color:#fff;border-radius:8px;padding:11px;font-weight:700;font-size:14px;cursor:pointer" style-hover="background:#3a332b">Save Case</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:10px 12px">
+          <div style="font-size:12px;color:#a0958a;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span>Create: Hold click, drag</span>·<span>Move: Drag and drop</span>·<span>Resize: Click edge, drag</span>·<span>Delete: Right click</span>·<button onClick="{{ toggleHelp }}" style="border:none;background:none;padding:0;font-size:12px;color:#a0958a;text-decoration:underline;cursor:pointer;font-family:inherit">Full controls →</button>
+          </div>
+        </div>
+      </sc-if>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{ showMap }}" hint-placeholder-val="{{ false }}">
+    <section data-screen-label="View Cases" style="display:flex;flex-direction:column;gap:14px">
+      <sc-if value="{{ noSavedCases }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:28px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
+          <div style="color:#7a6f61;font-size:14px">No current cases loaded, click Create New Case to start.</div>
+          <button onClick="{{ createBlank }}" style="background:#e85d1f;color:#fff;border:none;border-radius:8px;padding:12px 22px;font-weight:700;font-size:15px;cursor:pointer" style-hover="background:#d95511">Create New Case</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ hasSavedCases }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select value="{{ mapCaseId }}" onChange="{{ onMapCase }}" style="padding:10px;border:1px solid #d9cdba;border-radius:8px;background:#fff;font-size:15px;flex:1;min-width:160px">
+            <sc-for list="{{ mapCases }}" as="c" hint-placeholder-count="1">
+              <option value="{{ c.id }}">{{ c.name }}</option>
+            </sc-for>
+          </select>
+          <button onClick="{{ removeMapCase }}" style="border:1px solid #d9cdba;background:#fff;color:#b04309;border-radius:8px;padding:10px 16px;font-weight:700;font-size:13px;cursor:pointer" style-hover="border-color:#b04309">Remove Case</button>
+        </div>
+        <div style="font-size:12px;color:#a0958a">Removing only clears it from this session — the saved .zip stays on disk until you export an updated collection from <a href="#" onClick="{{ goImportExportLink }}">Import / Export</a>.</div>
+        <sc-for list="{{ mapLevels }}" as="lv" hint-placeholder-count="1">
+          <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="{{ lv.badgeStyle }}">{{ lv.label }}</span>
+              </div>
+              <div style="font-size:13px;color:#7a6f61">{{ lv.count }}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:24px 1fr;gap:4px">
+              <div></div>
+              <div style="{{ lv.colHeaderStyle }}">
+                <sc-for list="{{ lv.colHeaders }}" as="ch" hint-placeholder-count="0">
+                  <div style="text-align:center;font-size:12px;font-weight:800;color:#fff;background:#1c1814;border-radius:5px;padding:4px 0;font-family:'IBM Plex Mono',monospace">{{ ch }}</div>
+                </sc-for>
+              </div>
+              <div style="{{ lv.rowHeaderStyle }}">
+                <sc-for list="{{ lv.rowHeaders }}" as="rh" hint-placeholder-count="0">
+                  <div style="display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:#1c1814;border-radius:5px;font-family:'IBM Plex Mono',monospace">{{ rh }}</div>
+                </sc-for>
+              </div>
+              <div style="{{ lv.gridStyle }}">
+                <sc-for list="{{ lv.cells }}" as="cell" hint-placeholder-count="0">
+                  <div style="{{ cell.style }}">{{ cell.label }}</div>
+                </sc-for>
+                <sc-for list="{{ lv.tiles }}" as="t" hint-placeholder-count="0">
+                  <div style="{{ t.style }}" title="{{ t.title }}">
+                    <div style="font-weight:700;font-size:11px;line-height:1.25;overflow:hidden">{{ t.name }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;opacity:0.85">{{ t.loc }}</div>
+                    <sc-if value="{{ t.hasImage }}" hint-placeholder-val="{{ false }}">
+                      <span title="Has a custom image" style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 12px 12px 0;border-color:transparent #2f9e44 transparent transparent"></span>
+                    </sc-if>
+                    <sc-if value="{{ t.hasNotes }}" hint-placeholder-val="{{ false }}">
+                      <span title="Has notes" style="position:absolute;bottom:3px;right:3px;width:11px;height:11px;background:#fff;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5px">
+                        <span style="width:7px;height:1.3px;background:#7a6f61;border-radius:1px"></span>
+                        <span style="width:7px;height:1.3px;background:#7a6f61;border-radius:1px"></span>
+                        <span style="width:5px;height:1.3px;background:#7a6f61;border-radius:1px"></span>
+                      </span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <sc-if value="{{ lv.empty }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center;color:#a0958a;font-size:13px;padding:2px 0 6px">No bins on this level yet.</div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </sc-if>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{ showImportExport }}" hint-placeholder-val="{{ false }}">
+    <section data-screen-label="Import / Export" style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-weight:800;font-size:16px">Import</div>
+        <div style="font-size:13px;color:#7a6f61">Load one or more case .zip files, or a Collection.zip (which overwrites all cases currently loaded).</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label style="align-self:flex-start;display:inline-flex;align-items:center;justify-content:center;background:#1c1814;color:#fff;border:none;border-radius:8px;padding:12px 20px;font-weight:700;font-size:14px;cursor:pointer" style-hover="background:#3a332b">Import Case File(s)<input type="file" accept=".zip" multiple="{{ true }}" onChange="{{ onImportFiles }}" style="display:none"></label>
+          <label style="align-self:flex-start;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid #d9cdba;border-radius:8px;padding:12px 20px;font-weight:700;font-size:14px;cursor:pointer" style-hover="border-color:#e85d1f">Import Collection<input type="file" accept=".zip" onChange="{{ onImportCollectionFile }}" style="display:none"></label>
+        </div>
+        <div style="font-size:12px;color:#a0958a">Newly imported case files won't appear in any existing Collection.zip until you save an updated Export Collection below.</div>
+      </div>
+      <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-weight:800;font-size:16px">Export Collection</div>
+        <div style="font-size:13px;color:#7a6f61">Save every case currently loaded into a single Collection.zip.</div>
+        <button onClick="{{ exportCollection }}" disabled="{{ noSavedCases }}" style="align-self:flex-start;border:none;background:#1c1814;color:#fff;border-radius:8px;padding:12px 20px;font-weight:700;font-size:14px;cursor:pointer;opacity:{{ exportAllOpacity }}" style-hover="background:#3a332b">Export Collection (.zip)</button>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{ collectionModalOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;inset:0;background:rgba(28,24,20,0.6);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px">
+        <div style="background:#fffdf9;border-radius:12px;padding:24px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;box-sizing:border-box">
+          <div style="font-weight:800;font-size:16px">Import this collection?</div>
+          <div style="font-size:13px;line-height:1.6;color:#7a6f61">Importing will overwrite any cases currently loaded. This cannot be undone. Cases found in this collection:</div>
+          <div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto">
+            <sc-for list="{{ collectionCaseNames }}" as="nm" hint-placeholder-count="1">
+              <div style="font-size:13px;font-weight:600;background:#f2ece0;border:1px solid #e6dccd;border-radius:6px;padding:8px 10px">{{ nm }}</div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button onClick="{{ cancelCollectionImport }}" style="border:1px solid #d9cdba;background:#fff;border-radius:7px;padding:9px 18px;font-weight:600;font-size:13px;cursor:pointer">Cancel</button>
+            <button onClick="{{ confirmCollectionImport }}" style="border:none;background:#b04309;color:#fff;border-radius:7px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer" style-hover="background:#8f350a">Overwrite and Import</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showSearch }}" hint-placeholder-val="{{ true }}">
+    <section data-screen-label="Search" style="display:flex;flex-direction:column;gap:14px">
+      <sc-if value="{{ hasSavedCases }}" hint-placeholder-val="{{ true }}">
+      <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Where is my… (e.g. relay, XT60, heat shrink)" style="padding:15px 16px;border:1px solid #d9cdba;border-radius:10px;font-size:16px;background:#fff" style-focus="border-color:#e85d1f;outline:none">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ searchResults }}" as="s" hint-placeholder-count="0">
+          <button onClick="{{ s.go }}" style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:14px 16px;cursor:pointer;text-align:left;font-size:15px" style-hover="border-color:#e85d1f">
+            <span style="font-weight:700">{{ s.name }}</span>
+            <span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="{{ s.dot }}"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7a6f61">{{ s.loc }}</span></span>
+          </button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ searchEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;color:#a0958a;font-size:14px;padding:20px">{{ searchEmptyMsg }}</div>
+      </sc-if>
+      </sc-if>
+      <sc-if value="{{ noSavedCases }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:28px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
+          <div style="color:#7a6f61;font-size:14px">No current cases loaded, click Create New Case to start.</div>
+          <button onClick="{{ createBlank }}" style="background:#e85d1f;color:#fff;border:none;border-radius:8px;padding:12px 22px;font-weight:700;font-size:15px;cursor:pointer" style-hover="background:#d95511">Create New Case</button>
+        </div>
+      </sc-if>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{ showHelp }}" hint-placeholder-val="{{ false }}">
+    <section data-screen-label="Help" style="display:flex;flex-direction:column;gap:16px">
+      <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:14px;max-width:640px">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="font-weight:800;font-size:16px">Mouse controls</div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#a0958a">Hover to play</div>
+        </div>
+        <div onMouseEnter="{{ helpHover.draw }}" onMouseLeave="{{ helpLeave }}" style="display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:90px;border-radius:8px;background:{{ helpBg.draw }};cursor:default">
+          <div style="font-size:14px;padding:9px 10px;text-align:left">Draw a Bin — hold left click, drag to the desired area</div>
+          <div style="{{ demoBoxStyle }}">
+            <div style="{{ demoGridStyle }}"></div>
+            <div style="{{ drawRectStyle }}"></div>
+            <div style="{{ drawCursorStyle }}"></div>
+          </div>
+        </div>
+        <div onMouseEnter="{{ helpHover.move }}" onMouseLeave="{{ helpLeave }}" style="display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:90px;border-radius:8px;background:{{ helpBg.move }};cursor:default">
+          <div style="font-size:14px;padding:9px 10px;text-align:left">Move Bin — hold left click on the bin, drag to a new position</div>
+          <div style="{{ demoBoxStyle }}">
+            <div style="{{ demoGridStyle }}"></div>
+            <div style="{{ moveTileStyle }}"></div>
+            <div style="{{ moveCursorStyle }}"></div>
+          </div>
+        </div>
+        <div onMouseEnter="{{ helpHover.resize }}" onMouseLeave="{{ helpLeave }}" style="display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:90px;border-radius:8px;background:{{ helpBg.resize }};cursor:default">
+          <div style="font-size:14px;padding:9px 10px;text-align:left">Resize Bin — hold left click on a bin edge, drag to resize</div>
+          <div style="{{ demoBoxStyle }}">
+            <div style="{{ demoGridStyle }}"></div>
+            <div style="{{ resizeTileStyle }}"></div>
+            <div style="{{ resizeCursorStyle }}"></div>
+          </div>
+        </div>
+        <div onMouseEnter="{{ helpHover.del }}" onMouseLeave="{{ helpLeave }}" style="display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:90px;border-radius:8px;background:{{ helpBg.del }};cursor:default">
+          <div style="font-size:14px;padding:9px 10px;text-align:left">Delete Bin — Right click</div>
+          <div style="{{ demoBoxStyle }}">
+            <div style="{{ demoGridStyle }}"></div>
+            <div style="{{ deleteTileStyle }}"></div>
+            <div style="{{ deleteCursorStyle }}"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{ cropOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;inset:0;background:rgba(28,24,20,0.6);display:flex;align-items:center;justify-content:center;z-index:50">
+        <div style="background:#fffdf9;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;align-items:center;width:300px">
+          <div style="font-weight:800;font-size:15px">Crop to 200×200</div>
+          <div style="font-size:12px;color:#7a6f61;text-align:center">Image is larger than 200×200 — drag to position, use the slider to zoom, then confirm.</div>
+          <div style="{{ cropViewportStyle }}" ref="{{ cropRef }}" onPointerDown="{{ onCropDown }}" onPointerMove="{{ onCropMove }}" onPointerUp="{{ onCropUp }}" onPointerCancel="{{ onCropUp }}">
+            <div style="{{ cropImgStyle }}"></div>
+          </div>
+          <input type="range" min="{{ cropMin }}" max="{{ cropMax }}" step="0.001" value="{{ cropScale }}" onChange="{{ onCropZoom }}" style="width:100%">
+          <div style="display:flex;gap:8px;width:100%">
+            <button onClick="{{ cropCancel }}" style="flex:1;border:1px solid #d9cdba;background:#fff;border-radius:7px;padding:10px;font-weight:600;font-size:13px;cursor:pointer">Cancel</button>
+            <button onClick="{{ cropConfirm }}" style="flex:1;border:none;background:#1c1814;color:#fff;border-radius:7px;padding:10px;font-weight:700;font-size:13px;cursor:pointer">Use crop</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+
+
+class Component extends DCLogic {
+  state = {
+    tab: 'search', data: { cases: [] },
+    builderCaseId: '', activeLevel: 0,
+    selBinId: null, drag: null, hoverEdge: null,
+    mapCaseId: '', query: '',
+    crop: null,
+    refOn: false, refIdx: 0, refView: { scale: 1, offX: 0, offY: 0 }, refDrag: null,
+    helpOpen: false, helpDemo: null, coordsOn: true, justCreatedBinId: null, showGhosts: true, dragLevelIdx: null,
+    casePropsOpen: true
+  };
+  PAL = ['#e85d1f', '#2f7fb8', '#5f9440', '#9a5bc9', '#bf8a2a', '#c25577'];
+  DEFAULT_ICON = 'data:image/png;base64,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6e///u+l5eVlaXJyUjp16hT99bOf/UwCIF1//fXSU089Jb388stF3/vKK6/Q7yn36wc/+IGUyWSkbDYrLS0tSePj49LMzIwUCASkdDpd9pq/9a1vSQCkD37wg9Lvf/976cyZM5IoivTXl7/8ZQmAdPz4cenf/u3fyv78j3/841I0GpW++MUvlv3M9ddfL62vr0uiKOZdQyaTka699lr6uc7OTum6666TdDod/bNbbrlFOnnyZN6zI7+++tWvlv2ZBoNBevTRR6Xbb79dAiD9+Mc/lv70pz9JL774onT27FkpkUhIoihKr7zyirR//37674aGhqTOzk76//fee68UDAaLnl8qlZJefvnlomuamZnZsXW4608QMt7LaDTioYcewpve9CZ84QtfwGWXXYa9e/fWdILMzs7izW9+M9bW1vDAAw/gLW95C3ieRyQSgc/nw0svvYRPfepT+Ku/+itIkoSbb74ZNpsN7e3tZXcuURTBMAyi0WhRKrOwf4P8/v3vfz/kcjmOHz+OSy+9FOFwGHNzc/j973+Pz3zmM/j85z+P8fFxPP744/jZz36GQ4cOIZlMYnFxEadOncK//Mu/4Pjx4/j2t7+NO++8M68Lked53H777Xj3u9+N4eFhKJVKOujmzJkz+MQnPoEf//jHuOqqq3DTTTfRuYqk/kPc2XvuuQeHDx+mOsaBQAAvvPAC3ve+99HMoNfrRTweR29vLzweD5RKJRYXF3HDDTfA6/XiwQcfxOte9zoEAgFYLBbMz8/jG9/4Bh566CGwLItPf/rTebI+JOtY2NO+k2oyuz4GIS9PFEVcffXVuP/++wEADz30EGZmZvJihc2O3q9+9atYW1vD/fffj3e9613Y2NigfdBqtRpHjhzBQw89BAC48847MTIyQgfal/vupaUlpFIpbGxsUJlMQp4MBoMlEwlerxf/+I//CLfbDa/XC5/PB6PRiJtuugm33norAODxxx/Hww8/jCNHjmBlZQWrq6tQqVR4/etfj/vuu49+ZmxsrKj56t3vfjduvvlmRKNRrK6uQhAE6PV6XHHFFfjwhz8MAHjyySexurqKnp4euN1uyOVyHDt2jKatX//612NjYwOpVApqtRpdXV246aabcMMNN9B7yqX4EPr8N77xDXi9Xtx111246aabkMlk6Gjpffv24d577wUAfOELX8CTTz6ZBwaW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';
+  levelColor(cs, idx) { const lv = cs && cs.levels && cs.levels[idx]; return (lv && lv.color) || this.PAL[idx % this.PAL.length]; }
+  persist(data) {
+    this.setState({ data });
+    try { localStorage.setItem('cc_cases_v1', JSON.stringify(data.cases)); } catch (e) {}
+  }
+  getCase(id) { return this.state.data.cases.find(c => c.id === id); }
+  updateCase(id, patch) {
+    const data = this.state.data;
+    this.persist({ ...data, cases: data.cases.map(c => c.id === id ? { ...c, ...patch } : c) });
+  }
+  updateBin(cs, binId, patch) { this.updateCase(cs.id, { bins: cs.bins.map(b => b.id === binId ? { ...b, ...patch } : b) }); }
+  removeBin(cs, binId) {
+    this.updateCase(cs.id, { bins: cs.bins.filter(b => b.id !== binId) });
+    if (this.state.selBinId === binId) this.setState({ selBinId: null });
+  }
+  removeBinConfirm(cs, binId) {
+    const bin = cs.bins.find(b => b.id === binId);
+    if (!confirm('Delete bin "' + (bin && bin.label ? bin.label : 'Unlabeled') + '"? This cannot be undone.')) return;
+    this.removeBin(cs, binId);
+  }
+  sanitize(s) { return (String(s || 'case').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')) || 'case'; }
+  seqLabel(cfg, i, count) {
+    const ii = cfg.reverse ? (count - 1 - i) : i;
+    if (cfg.mode === 'number') { const start = parseInt(cfg.start) || 1; return String(start + ii); }
+    const startCode = ((String(cfg.start || 'A').toUpperCase().charCodeAt(0) - 65) % 26 + 26) % 26;
+    const total = startCode + ii;
+    const rep = Math.floor(total / 26) + 1;
+    const ch = String.fromCharCode(65 + (total % 26));
+    return ch.repeat(rep);
+  }
+  posLabel(cs, bin) { return this.seqLabel(cs.hIndex, bin.col - 1, cs.cols) + this.seqLabel(cs.vIndex, bin.row - 1, cs.rows); }
+  lightenColor(hex, steps) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return hex;
+    const n = parseInt(m[1], 16);
+    let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    const amt = (steps || 5) * 12;
+    r = Math.min(255, r + amt); g = Math.min(255, g + amt); b = Math.min(255, b + amt);
+    return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  }
+  tileStyle(p, rows, cols, color, opts) {
+    opts = opts || {};
+    const r = Math.min(Math.max(1, p.row || 1), rows), c = Math.min(Math.max(1, p.col || 1), cols);
+    const rs = Math.min(Math.max(1, p.rowSpan || 1), rows - r + 1), cs = Math.min(Math.max(1, p.colSpan || 1), cols - c + 1);
+    const shadows = [opts.selected ? '0 0 0 3px #e60000' : 'inset 0 -2px 0 rgba(0,0,0,0.15)'];
+    if (opts.multiBorderColor) shadows.push('inset 0 0 0 3px ' + opts.multiBorderColor);
+    return {
+      gridArea: (opts.row || r) + ' / ' + (opts.col || c) + ' / span ' + rs + ' / span ' + cs, zIndex: opts.dragging ? 3 : 1,
+      position: 'relative', background: color, color: '#fff', borderRadius: '5px',
+      padding: '5px 6px', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '2px',
+      boxShadow: shadows.join(', '),
+      opacity: opts.dragging ? 0.75 : 1, pointerEvents: 'none', minWidth: 0
+    };
+  }
+  gridStyles(rows, cols, interactive, cs, coordsOn) {
+    const wrap = { display: 'grid', gap: '4px', gridTemplateColumns: 'repeat(' + cols + ',1fr)', gridTemplateRows: 'repeat(' + rows + ',minmax(44px,auto))' };
+    if (interactive) { wrap.touchAction = 'none'; wrap.cursor = 'crosshair'; wrap.userSelect = 'none'; wrap.WebkitUserSelect = 'none'; }
+    const cells = [];
+    for (let r = 1; r <= rows; r++) for (let c = 1; c <= cols; c++)
+      cells.push({
+        style: { gridArea: r + ' / ' + c, border: '1px dashed #ddd0bd', borderRadius: '4px', pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontFamily: "'IBM Plex Mono',monospace", color: '#7a6f61', opacity: coordsOn ? 0.5 : 0 },
+        label: cs && coordsOn ? this.posLabel(cs, { row: r, col: c }) : ''
+      });
+    return { wrap, cells };
+  }
+  cellAt(e, rows, cols) {
+    const el = this.gridEl; if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    const fx = (e.clientX - rect.left) / rect.width * cols, fy = (e.clientY - rect.top) / rect.height * rows;
+    return { r: Math.min(rows, Math.max(1, Math.ceil(fy))), c: Math.min(cols, Math.max(1, Math.ceil(fx))), fr: fy, fc: fx };
+  }
+  covers(p, r, c) { return r >= p.row && r < p.row + (p.rowSpan || 1) && c >= p.col && c < p.col + (p.colSpan || 1); }
+  edgeAt(bins, cell) {
+    const idx = bins.findIndex(p => this.covers(p, cell.r, cell.c));
+    if (idx < 0) return { idx: -1 };
+    const p = bins[idx], t = 0.3;
+    if (cell.fc - (p.col - 1) < t) return { idx, edge: 'l' };
+    if (p.col - 1 + (p.colSpan || 1) - cell.fc < t) return { idx, edge: 'r' };
+    if (cell.fr - (p.row - 1) < t) return { idx, edge: 't' };
+    if (p.row - 1 + (p.rowSpan || 1) - cell.fr < t) return { idx, edge: 'b' };
+    return { idx };
+  }
+  overlapFree(bins, exceptId, row, col, rs, cs) {
+    return !bins.some(p => p.id !== exceptId &&
+      row < p.row + (p.rowSpan || 1) && p.row < row + rs && col < p.col + (p.colSpan || 1) && p.col < col + cs);
+  }
+  reorderLevels(cs, from, to) {
+    const order = cs.levels.map((_, i) => i);
+    const [moved] = order.splice(from, 1);
+    order.splice(to, 0, moved);
+    const newLevels = order.map(oldIdx => cs.levels[oldIdx]);
+    const oldToNew = {}; order.forEach((oldIdx, newIdx) => { oldToNew[oldIdx] = newIdx; });
+    const newBins = cs.bins.map(b => ({ ...b, levels: (b.levels || []).map(li => oldToNew[li]).sort((a, c) => a - c) }));
+    this.updateCase(cs.id, { levels: newLevels, bins: newBins });
+    if (this.state.activeLevel in oldToNew) this.setState({ activeLevel: oldToNew[this.state.activeLevel], selectedLevels: null });
+  }
+  removeLevel(cs, i) {
+    if (cs.levels.length <= 1) { alert('A case needs at least one level.'); return; }
+    const occupied = cs.bins.filter(b => (b.levels || []).includes(i));
+    const msg = occupied.length > 0
+      ? 'Level "' + cs.levels[i].name + '" has ' + occupied.length + ' bin(s) on it. Removing this level will delete those bin(s) (or unassign them from other levels they also occupy). Continue?'
+      : 'Remove level "' + cs.levels[i].name + '"?';
+    if (!confirm(msg)) return;
+    const newLevels = cs.levels.filter((_, j) => j !== i);
+    const newBins = cs.bins
+      .map(b => ({ ...b, levels: (b.levels || []).filter(li => li !== i).map(li => li > i ? li - 1 : li) }))
+      .filter(b => b.levels.length > 0);
+    this.updateCase(cs.id, { levels: newLevels, bins: newBins });
+    const al = this.state.activeLevel;
+    this.setState({ activeLevel: al > i ? al - 1 : Math.min(al, newLevels.length - 1), selectedLevels: null });
+  }
+  createBlankGuarded() {
+    const cur = this.getCase(this.state.builderCaseId);
+    if (cur && cur.bins.length > 0 && !confirm('"' + cur.name + '" has ' + cur.bins.length + ' bin(s) placed that haven\'t been exported yet. Start a new case anyway?')) return;
+    this.createBlank();
+  }
+  createBlank() {
+    const cs = {
+      id: 'c' + Date.now(), name: 'New case', cols: 6, rows: 4,
+      levels: [{ name: '1', color: this.PAL[0] }], hIndex: { mode: 'letter', start: 'A', reverse: false }, vIndex: { mode: 'number', start: 1, reverse: false },
+      bins: [], refImages: [], saved: false
+    };
+    this.persist({ cases: this.state.data.cases.concat(cs) });
+    this.setState({ tab: 'builder', builderCaseId: cs.id, activeLevel: 0, selBinId: null });
+  }
+  csvEscape(s) { s = String(s == null ? '' : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  csvParseLine(line) {
+    const out = []; let cur = '', q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (q) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else { if (ch === '"') q = true; else if (ch === ',') { out.push(cur); cur = ''; } else cur += ch; }
+    }
+    out.push(cur); return out;
+  }
+  async thumbBlob(dataUrl) {
+    return await (await fetch(dataUrl || this.DEFAULT_ICON)).blob();
+  }
+  blobToDataUrl(blob) { return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); }); }
+  crc32(bytes) {
+    if (!this._crcTable) {
+      const t = [];
+      for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c; }
+      this._crcTable = t;
+    }
+    let crc = 0 ^ (-1);
+    for (let i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ this._crcTable[(crc ^ bytes[i]) & 0xFF];
+    return (crc ^ (-1)) >>> 0;
+  }
+  makeZip(files) {
+    const enc = new TextEncoder();
+    const now = new Date();
+    const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+    const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+    let offset = 0; const parts = []; const centrals = [];
+    files.forEach(f => {
+      const nameBytes = enc.encode(f.name);
+      const data = f.data;
+      const crc = this.crc32(data);
+      const local = new Uint8Array(30 + nameBytes.length);
+      const dv = new DataView(local.buffer);
+      dv.setUint32(0, 0x04034b50, true); dv.setUint16(4, 20, true); dv.setUint16(6, 0, true); dv.setUint16(8, 0, true);
+      dv.setUint16(10, dosTime, true); dv.setUint16(12, dosDate, true); dv.setUint32(14, crc, true);
+      dv.setUint32(18, data.length, true); dv.setUint32(22, data.length, true);
+      dv.setUint16(26, nameBytes.length, true); dv.setUint16(28, 0, true);
+      local.set(nameBytes, 30);
+      const localOffset = offset;
+      parts.push(local, data); offset += local.length + data.length;
+      const central = new Uint8Array(46 + nameBytes.length);
+      const cdv = new DataView(central.buffer);
+      cdv.setUint32(0, 0x02014b50, true); cdv.setUint16(4, 20, true); cdv.setUint16(6, 20, true); cdv.setUint16(8, 0, true); cdv.setUint16(10, 0, true);
+      cdv.setUint16(12, dosTime, true); cdv.setUint16(14, dosDate, true); cdv.setUint32(16, crc, true);
+      cdv.setUint32(20, data.length, true); cdv.setUint32(24, data.length, true);
+      cdv.setUint16(28, nameBytes.length, true); cdv.setUint16(30, 0, true); cdv.setUint16(32, 0, true);
+      cdv.setUint16(34, 0, true); cdv.setUint16(36, 0, true); cdv.setUint32(38, 0, true);
+      cdv.setUint32(42, localOffset, true);
+      central.set(nameBytes, 46);
+      centrals.push(central);
+    });
+    const centralStart = offset;
+    let centralSize = 0; centrals.forEach(c => centralSize += c.length);
+    const eocd = new Uint8Array(22);
+    const edv = new DataView(eocd.buffer);
+    edv.setUint32(0, 0x06054b50, true); edv.setUint16(8, files.length, true); edv.setUint16(10, files.length, true);
+    edv.setUint32(12, centralSize, true); edv.setUint32(16, centralStart, true);
+    return new Blob([...parts, ...centrals, eocd], { type: 'application/zip' });
+  }
+  async readZip(buf) {
+    const data = new Uint8Array(buf), dv = new DataView(buf);
+    let eocd = -1;
+    for (let i = data.length - 22; i >= 0; i--) { if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; } }
+    if (eocd < 0) throw new Error('Not a valid .zip file');
+    const count = dv.getUint16(eocd + 10, true), centralStart = dv.getUint32(eocd + 16, true);
+    let ptr = centralStart; const entries = [];
+    for (let i = 0; i < count; i++) {
+      if (dv.getUint32(ptr, true) !== 0x02014b50) break;
+      const method = dv.getUint16(ptr + 10, true), compSize = dv.getUint32(ptr + 20, true);
+      const nameLen = dv.getUint16(ptr + 28, true), extraLen = dv.getUint16(ptr + 30, true), commentLen = dv.getUint16(ptr + 32, true);
+      const localOffset = dv.getUint32(ptr + 42, true);
+      const name = new TextDecoder().decode(data.slice(ptr + 46, ptr + 46 + nameLen));
+      entries.push({ name, method, compSize, localOffset });
+      ptr += 46 + nameLen + extraLen + commentLen;
+    }
+    const files = [];
+    for (const e of entries) {
+      const lNameLen = dv.getUint16(e.localOffset + 26, true), lExtraLen = dv.getUint16(e.localOffset + 28, true);
+      const start = e.localOffset + 30 + lNameLen + lExtraLen;
+      const raw = data.slice(start, start + e.compSize);
+      let bytes;
+      if (e.method === 0) bytes = raw;
+      else if (e.method === 8) {
+        const stream = new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+      } else continue;
+      if (!e.name.endsWith('/')) files.push({ name: e.name, data: bytes });
+    }
+    return files;
+  }
+  async buildCaseFiles(cs) {
+    const dirName = this.sanitize(cs.name) + '-' + cs.cols + 'x' + cs.rows;
+    const rows = [
+      '#case,' + this.csvEscape(cs.name) + ',' + cs.cols + ',' + cs.rows,
+      '#levels,' + cs.levels.map(l => this.csvEscape(l.name)).join(';'),
+      '#hindex,' + cs.hIndex.mode + ',' + cs.hIndex.start + ',' + cs.hIndex.reverse,
+      '#vindex,' + cs.vIndex.mode + ',' + cs.vIndex.start + ',' + cs.vIndex.reverse,
+      'id,label,row,col,rowSpan,colSpan,levels,notes,image'
+    ];
+    const files = [];
+    const usedIds = new Set();
+    for (const b of cs.bins) {
+      let exportId = b.label && b.label.trim() ? this.sanitize(b.label) : b.id;
+      let uniqueId = exportId, n = 1;
+      while (usedIds.has(uniqueId)) uniqueId = exportId + '-' + (++n);
+      usedIds.add(uniqueId);
+      let fname = '';
+      if (b.image) {
+        fname = this.sanitize(b.label || b.id) + '.png';
+        const blob = await this.thumbBlob(b.image);
+        files.push({ name: dirName + '/Images/' + fname, data: new Uint8Array(await blob.arrayBuffer()) });
+      }
+      rows.push([uniqueId, this.csvEscape(b.label), b.row, b.col, b.rowSpan, b.colSpan, (b.levels || []).join(';'), this.csvEscape(b.notes || ''), fname].join(','));
+    }
+    files.push({ name: dirName + '/' + dirName + '.csv', data: new TextEncoder().encode(rows.join('\n')) });
+    return { dirName, files };
+  }
+  downloadZip(zipBlob, filename) {
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+  async saveZipSmart(blob, filename) {
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({ suggestedName: filename, types: [{ description: 'Zip file', accept: { 'application/zip': ['.zip'] } }] });
+        const w = await handle.createWritable();
+        await w.write(blob);
+        await w.close();
+        return true;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return false;
+        alert("Couldn't open the save dialog here (" + (e && e.message ? e.message : 'blocked by the browser') + "). If this is an embedded preview, open the standalone .html file directly in its own browser tab and try again.");
+        return false;
+      }
+    }
+    this.downloadZip(blob, filename);
+    return true;
+  }
+  toast(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.setState({ toast: '' }), 3500);
+  }
+  async caseFromZipEntries(files) {
+    const csvFile = files.find(f => f.name.toLowerCase().endsWith('.csv'));
+    if (!csvFile) return null;
+    const imgFiles = {};
+    files.forEach(f => { if (/\/images\//i.test(f.name)) imgFiles[f.name.split('/').pop()] = f; });
+    const text = new TextDecoder().decode(csvFile.data);
+    const lines = text.split(/\r?\n/).filter(l => l.length);
+    let name = 'Imported case', cols = 6, rows = 4;
+    let levels = [{ name: '1' }], hIndex = { mode: 'letter', start: 'A', reverse: false }, vIndex = { mode: 'number', start: 1, reverse: false };
+    let headerIdx = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      if (l.startsWith('#case,')) { const p = this.csvParseLine(l.slice(6)); name = p[0]; cols = parseInt(p[1]) || cols; rows = parseInt(p[2]) || rows; }
+      else if (l.startsWith('#levels,')) { levels = l.slice(8).split(';').map(n => ({ name: n })); }
+      else if (l.startsWith('#hindex,')) { const p = l.slice(8).split(','); hIndex = { mode: p[0], start: p[1], reverse: p[2] === 'true' }; }
+      else if (l.startsWith('#vindex,')) { const p = l.slice(8).split(','); vIndex = { mode: p[0], start: p[1], reverse: p[2] === 'true' }; }
+      else if (l.startsWith('id,label,row')) { headerIdx = i; break; }
+    }
+    const bins = [];
+    for (const l of lines.slice(headerIdx + 1)) {
+      const p = this.csvParseLine(l); if (p.length < 9) continue;
+      let image = null;
+      if (p[8] && imgFiles[p[8]]) {
+        try { image = await this.blobToDataUrl(new Blob([imgFiles[p[8]].data], { type: 'image/png' })); } catch (e) {}
+      }
+      bins.push({
+        id: p[0] || ('b' + Date.now() + Math.random()), label: p[1],
+        row: parseInt(p[2]) || 1, col: parseInt(p[3]) || 1, rowSpan: parseInt(p[4]) || 1, colSpan: parseInt(p[5]) || 1,
+        levels: (p[6] || '0').split(';').map(n => parseInt(n)).filter(n => !isNaN(n)), notes: p[7] || '', image
+      });
+    }
+    levels = levels.map((l, i) => ({ ...l, color: l.color || this.PAL[i % this.PAL.length] }));
+    return { id: 'c' + Date.now() + Math.random().toString(36).slice(2, 6), name, cols, rows, levels, hIndex, vIndex, bins, refImages: [], saved: true };
+  }
+  async parseCaseZip(buf) {
+    return await this.caseFromZipEntries(await this.readZip(buf));
+  }
+  async parseCollectionZip(buf) {
+    const files = await this.readZip(buf);
+    const groups = {};
+    files.forEach(f => {
+      const slash = f.name.indexOf('/');
+      const top = slash >= 0 ? f.name.slice(0, slash) : '';
+      if (!top) return;
+      (groups[top] = groups[top] || []).push(f);
+    });
+    const out = [];
+    for (const top of Object.keys(groups)) {
+      const cs = await this.caseFromZipEntries(groups[top]);
+      if (cs) out.push(cs);
+    }
+    return out;
+  }
+  dedupeName(name, existingNames) {
+    let n = name, i = 1;
+    while (existingNames.includes(n)) { n = name + ' (' + (++i) + ')'; }
+    return n;
+  }
+  async onImportFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    const existing = this.state.data.cases.map(c => c.name);
+    const added = [];
+    for (const f of files) {
+      try {
+        const cs = await this.parseCaseZip(await f.arrayBuffer());
+        if (cs) { cs.name = this.dedupeName(cs.name, existing.concat(added.map(a => a.name))); added.push(cs); }
+      } catch (e) {}
+    }
+    if (!added.length) { alert('No valid case files found.'); return; }
+    this.persist({ cases: this.state.data.cases.concat(added) });
+    this.toast('Imported ' + added.length + ' case' + (added.length > 1 ? 's' : ''));
+  }
+  async onImportFolder(fileList) {
+    const files = Array.from(fileList || []).filter(f => /\.zip$/i.test(f.name));
+    await this.onImportFiles(files);
+  }
+  async onImportCollectionFile(file) {
+    try {
+      const cases = await this.parseCollectionZip(await file.arrayBuffer());
+      if (!cases.length) { alert('No cases found in that collection.'); return; }
+      this._pendingCollection = cases;
+      this.setState({ collectionModalOpen: true, collectionCaseNames: cases.map(c => c.name) });
+    } catch (e) { alert('Could not read that collection: ' + e.message); }
+  }
+  cancelCollectionImport() {
+    this._pendingCollection = null;
+    this.setState({ collectionModalOpen: false, collectionCaseNames: [] });
+  }
+  confirmCollectionImport() {
+    const cases = this._pendingCollection || [];
+    this._pendingCollection = null;
+    this.persist({ cases });
+    this.setState({ collectionModalOpen: false, collectionCaseNames: [], builderCaseId: cases[0] ? cases[0].id : '', mapCaseId: '', selBinId: null });
+    this.toast('Imported collection — ' + cases.length + ' case' + (cases.length > 1 ? 's' : ''));
+  }
+  async exportCollection() {
+    const cases = this.state.data.cases;
+    if (!cases.length) return;
+    try {
+      const allFiles = [];
+      for (const cs of cases) { const { files } = await this.buildCaseFiles(cs); allFiles.push(...files); }
+      const blob = this.makeZip(allFiles);
+      await this.saveZipSmart(blob, 'Collection.zip');
+    } catch (e) { alert('Export failed: ' + e.message); }
+  }
+  async saveCasePrompt(cs) {
+    try {
+      const { dirName, files } = await this.buildCaseFiles(cs);
+      const blob = this.makeZip(files);
+      const done = await this.saveZipSmart(blob, dirName + '.zip');
+      if (!done) return;
+      this.updateCase(cs.id, { saved: true });
+    } catch (e) { alert('Save failed: ' + e.message); }
+  }
+  componentDidMount() {
+    try {
+      const raw = localStorage.getItem('cc_cases_v1');
+      if (raw) {
+        const cases = JSON.parse(raw);
+        if (Array.isArray(cases) && cases.length) this.setState({ data: { cases } });
+      }
+    } catch (e) {}
+  }
+  buildLevelViews(cs) {
+    const colHeaders = Array.from({ length: cs.cols }, (_, i) => this.seqLabel(cs.hIndex, i, cs.cols));
+    const rowHeaders = Array.from({ length: cs.rows }, (_, i) => this.seqLabel(cs.vIndex, i, cs.rows));
+    const colHeaderStyle = { display: 'grid', gridTemplateColumns: 'repeat(' + cs.cols + ',1fr)', gap: '4px' };
+    const rowHeaderStyle = { display: 'grid', gridTemplateRows: 'repeat(' + cs.rows + ',minmax(44px,auto))', gap: '4px' };
+    return cs.levels.map((lv, i) => {
+      const color = this.levelColor(cs, i);
+      const g = this.gridStyles(cs.rows, cs.cols, false, cs, true);
+      const parts = cs.bins.filter(p => (p.levels || []).includes(i));
+      return {
+        label: lv.name, badgeStyle: { background: color, color: '#fff', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap' },
+        count: parts.length ? parts.length + ' bins' : '',
+        gridStyle: g.wrap, cells: g.cells,
+        colHeaders, rowHeaders, colHeaderStyle, rowHeaderStyle,
+        tiles: parts.map(p => ({
+          name: p.label || 'Unlabeled', loc: this.posLabel(cs, p),
+          title: (p.label || 'Unlabeled') + ' — ' + lv.name + ' · ' + this.posLabel(cs, p),
+          hasImage: !!p.image,
+          hasNotes: !!(p.notes && p.notes.trim()),
+          style: this.tileStyle(p, cs.rows, cs.cols, (p.levels || []).length === cs.levels.length ? this.levelColor(cs, 0) : color, { multiBorderColor: (p.levels || []).length > 1 ? '#000000' : null })
+        })),
+        empty: parts.length === 0
+      };
+    });
+  }
+  handleBinImage(cs, binId, file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        if (img.width > 200 || img.height > 200) {
+          const scale = Math.max(200 / img.width, 200 / img.height);
+          this.setState({ crop: { binId, img, scale, minScale: scale, offX: (200 - img.width * scale) / 2, offY: (200 - img.height * scale) / 2, dragging: null } });
+        } else {
+          const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
+          const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 200, 200);
+          ctx.drawImage(img, (200 - img.width) / 2, (200 - img.height) / 2);
+          this.updateBin(cs, binId, { image: cv.toDataURL('image/png') });
+        }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  renderVals() {
+    const st = this.state, data = st.data, cases = data.cases;
+    const nav = (key) => ({
+      padding: '10px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+      border: '1px solid ' + (st.tab === key ? '#e85d1f' : '#d9cdba'),
+      background: st.tab === key ? '#e85d1f' : '#fffdf9', color: st.tab === key ? '#fff' : '#1c1814'
+    });
+    const cs = this.getCase(st.builderCaseId);
+    const savedCases = cases.filter(c => c.saved);
+    const mapCases = savedCases;
+    const mapCase = this.getCase(st.mapCaseId) || mapCases[0];
+    const vals = {
+      cases, hasCases: cases.length > 0, noCases: cases.length === 0,
+      savedCases, hasSavedCases: savedCases.length > 0, noSavedCases: savedCases.length === 0,
+      navStyles: { builder: nav('builder'), map: nav('map'), search: nav('search'), importexport: nav('importexport'), help: nav('help') },
+      goBuilder: () => this.setState({ tab: 'builder' }),
+      goMap: () => this.setState({ tab: 'map' }),
+      goSearch: () => this.setState({ tab: 'search' }),
+      goImportExport: () => this.setState({ tab: 'importexport' }),
+      goHelp: () => this.setState({ tab: 'help' }),
+      showBuilder: st.tab === 'builder', showMap: st.tab === 'map', showSearch: st.tab === 'search', showImportExport: st.tab === 'importexport', showHelp: st.tab === 'help',
+      createBlank: () => this.createBlankGuarded(),
+      toast: st.toast || '',
+      hasBuilderCase: !!cs,
+      builderCaseId: cs ? cs.id : '',
+      onBuilderCase: (e) => {
+        const val = e.target.value;
+        if (cs && !cs.saved && cs.bins.length > 0 && !confirm('Editing a different case will discard your current unsaved case ("' + cs.name + '"). Continue?')) { e.target.value = st.builderCaseId; return; }
+        this.setState({ builderCaseId: val, activeLevel: 0, selectedLevels: null, selBinId: null, drag: null });
+      },
+      exportCase: () => cs && this.saveCasePrompt(cs),
+      exportAllOpacity: savedCases.length ? '1' : '0.5',
+      onImportFiles: (e) => { const files = e.target.files; if (files && files.length) this.onImportFiles(files); e.target.value = ''; },
+      onImportFolder: (e) => { const files = e.target.files; if (files && files.length) this.onImportFolder(files); e.target.value = ''; },
+      onImportCollectionFile: (e) => { const f = e.target.files && e.target.files[0]; if (f) this.onImportCollectionFile(f); e.target.value = ''; },
+      exportCollection: () => this.exportCollection(),
+      collectionModalOpen: !!st.collectionModalOpen,
+      collectionCaseNames: st.collectionCaseNames || [],
+      cancelCollectionImport: () => this.cancelCollectionImport(),
+      confirmCollectionImport: () => this.confirmCollectionImport(),
+      query: st.query, onQuery: (e) => this.setState({ query: e.target.value }),
+      mapCases, mapHasCases: mapCases.length > 0, mapNoCases: mapCases.length === 0,
+      mapCaseId: mapCase ? mapCase.id : '',
+      onMapCase: (e) => this.setState({ mapCaseId: e.target.value }),
+      removeMapCase: () => {
+        if (!mapCase) return;
+        if (!confirm('Remove "' + mapCase.name + '" from this session? This only clears it from memory here — the saved .zip file (if any) stays on disk until you export an updated collection from Import / Export. Continue?')) return;
+        this.persist({ cases: this.state.data.cases.filter(c => c.id !== mapCase.id) });
+        this.setState({ mapCaseId: '' });
+      },
+      goImportExportLink: (e) => { e.preventDefault(); this.setState({ tab: 'importexport' }); },
+      gridRef: (el) => { this.gridEl = el; },
+      cropRef: (el) => { this.cropEl = el; },
+      casePropsOpen: st.casePropsOpen,
+      casePropsToggleLabel: st.casePropsOpen ? 'Hide ▲' : 'Show ▼',
+      toggleCaseProps: () => this.setState({ casePropsOpen: !st.casePropsOpen }),
+    };
+    const toggleHelp = () => this.setState({ tab: 'help', helpDemo: null });
+    const closeHelp = () => this.setState({ helpOpen: false, helpDemo: null });
+    const helpLeave = () => this.setState({ helpDemo: null });
+    const helpHover = {
+      draw: () => this.setState({ helpDemo: 'draw' }), move: () => this.setState({ helpDemo: 'move' }),
+      resize: () => this.setState({ helpDemo: 'resize' }),
+      del: () => this.setState({ helpDemo: 'del' })
+    };
+    const helpBg = {
+      draw: st.helpDemo === 'draw' ? '#f7f0e6' : 'transparent', move: st.helpDemo === 'move' ? '#f7f0e6' : 'transparent',
+      resize: st.helpDemo === 'resize' ? '#f7f0e6' : 'transparent',
+      del: st.helpDemo === 'del' ? '#f7f0e6' : 'transparent'
+    };
+    const demoPs = (key) => st.helpDemo === key ? 'running' : 'paused';
+    Object.assign(vals, {
+      toggleHelp, closeHelp, helpOpen: st.helpOpen, helpLeave, helpHover, helpBg,
+      demoBoxStyle: { width: '90px', height: '90px', flexShrink: 0, position: 'relative', display: 'block', background: '#fbf8f2', borderRadius: '8px', overflow: 'hidden' },
+      demoGridStyle: { position: 'absolute', inset: '6px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gridTemplateRows: 'repeat(3,1fr)', gap: '3px' },
+      drawRectStyle: { position: 'absolute', left: '6px', top: '6px', width: '48px', height: '48px', border: '2px dashed #1c1814', borderRadius: '4px', background: 'rgba(28,24,20,0.12)', animation: 'demoDrawRect 2.2s ease-in-out infinite', animationPlayState: demoPs('draw') },
+      drawCursorStyle: { position: 'absolute', left: '6px', top: '6px', width: '10px', height: '10px', borderRadius: '50%', background: '#1c1814', boxShadow: '0 0 0 2px #fff', animation: 'demoDrawCursor 2.2s ease-in-out infinite', animationPlayState: demoPs('draw') },
+      moveTileStyle: { position: 'absolute', left: '6px', top: '6px', width: '24px', height: '24px', borderRadius: '4px', background: '#e85d1f', animation: 'demoMoveTile 2.2s ease-in-out infinite', animationPlayState: demoPs('move') },
+      moveCursorStyle: { position: 'absolute', left: '16px', top: '16px', width: '10px', height: '10px', borderRadius: '50%', background: '#1c1814', boxShadow: '0 0 0 2px #fff', animation: 'demoMoveCursor 2.2s ease-in-out infinite', animationPlayState: demoPs('move') },
+      resizeTileStyle: { position: 'absolute', left: '6px', top: '6px', width: '48px', height: '48px', borderRadius: '4px', background: '#2f7fb8', animation: 'demoResizeTile 2.2s ease-in-out infinite', animationPlayState: demoPs('resize') },
+      resizeCursorStyle: { position: 'absolute', left: '6px', top: '6px', width: '10px', height: '10px', borderRadius: '50%', background: '#1c1814', boxShadow: '0 0 0 2px #fff', animation: 'demoResizeCursor 2.2s ease-in-out infinite', animationPlayState: demoPs('resize') },
+      deleteTileStyle: { position: 'absolute', left: '30px', top: '30px', width: '30px', height: '30px', borderRadius: '4px', background: '#b04309', animation: 'demoDeleteTile 2.2s ease-in-out infinite', animationPlayState: demoPs('del') },
+      deleteCursorStyle: { position: 'absolute', left: '40px', top: '40px', width: '10px', height: '10px', borderRadius: '50%', border: '2px solid #b04309', background: 'transparent', animation: 'demoDeleteCursor 2.2s ease-in-out infinite', animationPlayState: demoPs('del') }
+    });
+    vals.builderTitle = cs ? cs.name : '';
+    vals.onBuilderTitle = (e) => cs && this.updateCase(cs.id, { name: e.target.value });
+    vals.isNewCase = !!(cs && !cs.saved);
+    vals.isExistingCase = !!(cs && cs.saved);
+    if (cs) {
+      const rows = cs.rows, cols = cs.cols, bins = cs.bins, activeLevel = Math.min(st.activeLevel, cs.levels.length - 1);
+      let selectedLevels = (st.selectedLevels || []).filter(i => i < cs.levels.length);
+      if (!selectedLevels.length) selectedLevels = [activeLevel];
+      const color = this.levelColor(cs, activeLevel);
+      const g = this.gridStyles(rows, cols, true, cs, st.coordsOn);
+      vals.builderGridStyle = g.wrap; vals.gridCells = g.cells;
+      vals.colHeaders = Array.from({ length: cols }, (_, i) => this.seqLabel(cs.hIndex, i, cols));
+      vals.rowHeaders = Array.from({ length: rows }, (_, i) => this.seqLabel(cs.vIndex, i, rows));
+      vals.colHeaderStyle = { display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',1fr)', gap: '4px' };
+      vals.rowHeaderStyle = { display: 'grid', gridTemplateRows: 'repeat(' + rows + ',minmax(44px,auto))', gap: '4px' };
+      vals.coordsOn = st.coordsOn;
+      vals.onCoordsOn = (e) => this.setState({ coordsOn: e.target.checked });
+      vals.showGhosts = st.showGhosts;
+      vals.onShowGhosts = (e) => this.setState({ showGhosts: e.target.checked });
+      vals.ghostTiles = st.showGhosts ? bins.filter(b => {
+        const lv = b.levels || [];
+        return lv.length > 0 && !lv.some(l => selectedLevels.includes(l));
+      }).map(b => {
+        const isAll = (b.levels || []).length === cs.levels.length;
+        return {
+          name: b.label || 'Unlabeled', pos: this.posLabel(cs, b),
+          style: { ...this.tileStyle(b, rows, cols, this.levelColor(cs, isAll ? 0 : (b.levels || [0])[0]), {}), opacity: 0.3, pointerEvents: 'none' }
+        };
+      }) : [];
+      const visible = bins.filter(b => (b.levels || []).some(l => selectedLevels.includes(l)));
+      const d = st.drag;
+      if (st.hoverEdge && !d) vals.builderGridStyle = { ...g.wrap, cursor: (st.hoverEdge.edge === 'l' || st.hoverEdge.edge === 'r') ? 'ew-resize' : 'ns-resize' };
+      vals.binTiles = visible.map((p) => {
+        const isMove = d && d.type === 'move' && d.id === p.id && d.moved;
+        const isRes = d && d.type === 'resize' && d.id === p.id && d.moved;
+        const geom = isRes ? { ...p, ...d.geom } : (isMove ? { ...p, row: d.toR, col: d.toC } : p);
+        const isAll = (p.levels || []).length === cs.levels.length;
+        const intersecting = (p.levels || []).filter(l => selectedLevels.includes(l));
+        const tileColor = isAll ? this.levelColor(cs, 0) : this.levelColor(cs, Math.min(...(intersecting.length ? intersecting : [activeLevel])));
+        return {
+          name: p.label || 'Unlabeled',
+          pos: this.posLabel(cs, p),
+          multi: (p.levels || []).length > 1,
+          multiLabel: isAll ? 'ALL' : '×' + (p.levels || []).length,
+          hasImage: !!p.image,
+          hasNotes: !!(p.notes && p.notes.trim()),
+          style: this.tileStyle(geom, rows, cols, tileColor, { selected: st.selBinId === p.id, dragging: isMove || isRes, multiBorderColor: (p.levels || []).length > 1 ? '#000000' : null })
+        };
+      });
+      const he = st.hoverEdge;
+      vals.hoverArrow = !!(he && !d && visible[he.idx]);
+      if (vals.hoverArrow) {
+        const p = visible[he.idx];
+        vals.hoverArrowChar = (he.edge === 'l' || he.edge === 'r') ? '↔' : '↕';
+        vals.hoverArrowStyle = {
+          gridArea: p.row + ' / ' + p.col + ' / span ' + (p.rowSpan || 1) + ' / span ' + (p.colSpan || 1),
+          display: 'flex', pointerEvents: 'none', zIndex: 4,
+          alignItems: he.edge === 't' ? 'flex-start' : (he.edge === 'b' ? 'flex-end' : 'center'),
+          justifyContent: he.edge === 'l' ? 'flex-start' : (he.edge === 'r' ? 'flex-end' : 'center')
+        };
+      } else { vals.hoverArrowChar = ''; vals.hoverArrowStyle = { display: 'none' }; }
+      vals.painting = !!(d && d.type === 'paint');
+      vals.paintStyle = vals.painting ? {
+        gridArea: Math.min(d.r0, d.r1) + ' / ' + Math.min(d.c0, d.c1) + ' / span ' + (Math.abs(d.r1 - d.r0) + 1) + ' / span ' + (Math.abs(d.c1 - d.c0) + 1),
+        border: '2px dashed #1c1814', borderRadius: '5px', background: 'rgba(28,24,20,0.08)', zIndex: 2, pointerEvents: 'none'
+      } : { display: 'none' };
+      const allLevelIdx = () => cs.levels.map((_, i) => i);
+      vals.onGridDown = (e) => {
+        const cell = this.cellAt(e, rows, cols); if (!cell) return;
+        e.preventDefault();
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+        const hit = this.edgeAt(visible, cell);
+        let drag;
+        if (hit.idx >= 0 && hit.edge) drag = { type: 'resize', id: visible[hit.idx].id, edge: hit.edge, geom: { row: visible[hit.idx].row, col: visible[hit.idx].col, rowSpan: visible[hit.idx].rowSpan || 1, colSpan: visible[hit.idx].colSpan || 1 }, moved: false };
+        else if (hit.idx >= 0) drag = { type: 'move', id: visible[hit.idx].id, offR: cell.r - visible[hit.idx].row, offC: cell.c - visible[hit.idx].col, toR: visible[hit.idx].row, toC: visible[hit.idx].col, moved: false };
+        else drag = { type: 'paint', r0: cell.r, c0: cell.c, r1: cell.r, c1: cell.c };
+        this.setState({ drag, hoverEdge: null });
+      };
+      vals.onGridMove = (e) => {
+        const dd = this.state.drag;
+        const cell = this.cellAt(e, rows, cols); if (!cell) return;
+        if (!dd) {
+          const hit = this.edgeAt(visible, cell);
+          const next = hit.idx >= 0 && hit.edge ? { idx: hit.idx, edge: hit.edge } : null;
+          const cur = this.state.hoverEdge;
+          if ((cur && (!next || cur.idx !== next.idx || cur.edge !== next.edge)) || (!cur && next)) this.setState({ hoverEdge: next });
+          return;
+        }
+        if (dd.type === 'resize') {
+          const p = bins.find(b => b.id === dd.id);
+          const gm = { row: p.row, col: p.col, rowSpan: p.rowSpan || 1, colSpan: p.colSpan || 1 };
+          if (dd.edge === 'r') gm.colSpan = Math.min(cols - p.col + 1, Math.max(1, cell.c - p.col + 1));
+          if (dd.edge === 'b') gm.rowSpan = Math.min(rows - p.row + 1, Math.max(1, cell.r - p.row + 1));
+          if (dd.edge === 'l') { const right = p.col + (p.colSpan || 1) - 1; gm.col = Math.min(right, Math.max(1, cell.c)); gm.colSpan = right - gm.col + 1; }
+          if (dd.edge === 't') { const bot = p.row + (p.rowSpan || 1) - 1; gm.row = Math.min(bot, Math.max(1, cell.r)); gm.rowSpan = bot - gm.row + 1; }
+          if (gm.row !== dd.geom.row || gm.col !== dd.geom.col || gm.rowSpan !== dd.geom.rowSpan || gm.colSpan !== dd.geom.colSpan)
+            this.setState({ drag: { ...dd, geom: gm, moved: true } });
+          return;
+        }
+        if (dd.type === 'move') {
+          const p = bins.find(b => b.id === dd.id);
+          const toR = Math.min(Math.max(1, cell.r - dd.offR), rows - (p.rowSpan || 1) + 1);
+          const toC = Math.min(Math.max(1, cell.c - dd.offC), cols - (p.colSpan || 1) + 1);
+          if (toR !== dd.toR || toC !== dd.toC || dd.moved)
+            this.setState({ drag: { ...dd, toR, toC, moved: dd.moved || toR !== p.row || toC !== p.col } });
+        } else if (cell.r !== dd.r1 || cell.c !== dd.c1) {
+          this.setState({ drag: { ...dd, r1: cell.r, c1: cell.c } });
+        }
+      };
+      vals.onGridUp = () => {
+        const dd = this.state.drag; if (!dd) return;
+        if (dd.type === 'resize') {
+          if (!dd.moved) { this.setState({ selBinId: dd.id, drag: null }); return; }
+          const gm = dd.geom;
+          if (this.overlapFree(visible, dd.id, gm.row, gm.col, gm.rowSpan, gm.colSpan)) this.updateBin(cs, dd.id, gm);
+          this.setState({ drag: null, selBinId: dd.id });
+          return;
+        }
+        if (dd.type === 'move') {
+          if (!dd.moved) { this.setState({ selBinId: dd.id, drag: null }); return; }
+          const p = bins.find(b => b.id === dd.id);
+          if (this.overlapFree(visible, dd.id, dd.toR, dd.toC, p.rowSpan || 1, p.colSpan || 1)) this.updateBin(cs, dd.id, { row: dd.toR, col: dd.toC });
+          this.setState({ drag: null, selBinId: dd.id });
+        } else {
+          const r = Math.min(dd.r0, dd.r1), c = Math.min(dd.c0, dd.c1);
+          const rs = Math.abs(dd.r1 - dd.r0) + 1, ccs = Math.abs(dd.c1 - dd.c0) + 1;
+          if (this.overlapFree(visible, null, r, c, rs, ccs)) {
+            const bin = { id: 'b' + Date.now() + Math.random().toString(36).slice(2, 6), label: '', row: r, col: c, rowSpan: rs, colSpan: ccs, levels: [activeLevel], notes: '', image: null };
+            this.updateCase(cs.id, { bins: bins.concat(bin) });
+            this.setState({ drag: null, selBinId: bin.id, justCreatedBinId: bin.id });
+          } else this.setState({ drag: null });
+        }
+      };
+      vals.onGridCancel = () => this.setState({ drag: null, hoverEdge: null });
+      vals.onGridContextMenu = (e) => {
+        e.preventDefault();
+        const cell = this.cellAt(e, rows, cols); if (!cell) return;
+        const hit = visible.find(p => this.covers(p, cell.r, cell.c));
+        if (hit) this.removeBinConfirm(cs, hit.id);
+      };
+      vals.keyRows = cs.levels.map((lv, i) => ({
+        name: lv.name,
+        boxStyle: { display: 'inline-block', width: '14px', height: '14px', borderRadius: '3px', background: this.levelColor(cs, i), flexShrink: 0 }
+      })).concat([{
+        name: 'Multi Level Bin',
+        boxStyle: { display: 'inline-block', width: '14px', height: '14px', borderRadius: '3px', background: 'transparent', border: '2px solid ' + '#000000', flexShrink: 0 }
+      }]);
+      vals.levelTabs = cs.levels.map((lv, i) => {
+        const lc = this.levelColor(cs, i);
+        const isPrimary = i === activeLevel;
+        const isSelected = selectedLevels.includes(i);
+        return {
+          name: lv.name, color: lc,
+          onColor: (e) => this.updateCase(cs.id, { levels: cs.levels.map((l, j) => j === i ? { ...l, color: e.target.value } : l) }),
+          on: (e) => {
+            if (e && e.shiftKey) {
+              let next = selectedLevels.includes(i) ? selectedLevels.filter(x => x !== i) : selectedLevels.concat(i);
+              if (!next.length) next = [i];
+              this.setState({ selectedLevels: next, activeLevel: i, selBinId: null });
+            } else this.setState({ selectedLevels: [i], activeLevel: i, selBinId: null });
+          },
+          onDragStart: (e) => { try { e.dataTransfer.effectAllowed = 'move'; } catch (err) {} this.setState({ dragLevelIdx: i }); },
+          onDragOver: (e) => e.preventDefault(),
+          onDrop: (e) => {
+            e.preventDefault();
+            const from = this.state.dragLevelIdx;
+            this.setState({ dragLevelIdx: null });
+            if (from == null || from === i) return;
+            this.reorderLevels(cs, from, i);
+          },
+          onDragEnd: () => this.setState({ dragLevelIdx: null }),
+          onRemove: (e) => { e.stopPropagation(); this.removeLevel(cs, i); },
+          canRemove: cs.levels.length > 1,
+          wrapStyle: { display: 'flex', alignItems: 'center', gap: '4px', cursor: 'grab', opacity: this.state.dragLevelIdx === i ? 0.5 : 1 },
+          arrowStyle: { fontSize: '11px', color: '#1c1814', opacity: isPrimary ? 1 : 0, width: '9px', textAlign: 'center', flexShrink: 0 },
+          style: { border: '1px solid ' + (isPrimary || isSelected ? lc : '#d9cdba'), background: isPrimary ? lc : '#fff', color: isPrimary ? '#fff' : '#1c1814', borderRadius: '6px', padding: '7px 12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }
+        };
+      });
+      vals.addLevel = () => {
+        const levels = cs.levels.concat({ name: String(cs.levels.length + 1), color: this.PAL[cs.levels.length % this.PAL.length] });
+        this.updateCase(cs.id, { levels });
+      };
+      const refImages = cs.refImages || [];
+      const refIdx = Math.min(st.refIdx, Math.max(0, refImages.length - 1));
+      const curRef = refImages[refIdx];
+      vals.refName = curRef ? curRef.name : 'Upload a reference image to assist you with case creation';
+      vals.onRefUpload = (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        let pending = files.length; const added = [];
+        files.forEach(f => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+              added.push({ id: 'r' + Date.now() + Math.random().toString(36).slice(2, 6), name: f.name, src: reader.result, natW: img.width, natH: img.height });
+              if (--pending === 0) {
+                this.updateCase(cs.id, { refImages: refImages.concat(added) });
+                this.setState({ refOn: true, refIdx: refImages.length, refView: { scale: 1, offX: 0, offY: 0 } });
+              }
+            };
+            img.src = reader.result;
+          };
+          reader.readAsDataURL(f);
+        });
+      };
+      vals.refToggleLabel = refImages.length === 0 ? 'No reference image' : (st.refOn ? 'Hide reference' : 'Show reference');
+      vals.refToggleStyle = refImages.length === 0
+        ? { border: '1px solid #d9cdba', background: '#fff', color: '#a0958a', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'not-allowed' }
+        : { border: '1px solid ' + (st.refOn ? '#e85d1f' : '#d9cdba'), background: st.refOn ? '#e85d1f' : '#fff', color: st.refOn ? '#fff' : '#1c1814', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' };
+      vals.toggleRefOn = refImages.length === 0 ? () => {} : () => this.setState({ refOn: !st.refOn });
+      vals.refDisabled = refImages.length === 0;
+      vals.refShow = st.refOn && !!curRef;
+      vals.refHasMulti = refImages.length > 1;
+      vals.refPrev = () => this.setState({ refIdx: (refIdx - 1 + refImages.length) % refImages.length, refView: { scale: 1, offX: 0, offY: 0 } });
+      vals.refNext = () => this.setState({ refIdx: (refIdx + 1) % refImages.length, refView: { scale: 1, offX: 0, offY: 0 } });
+      if (vals.refShow) {
+        const rv = st.refView;
+        vals.refViewportRef = (el) => { this.refEl = el; };
+        vals.refViewportStyle = { width: '100%', height: '260px', borderRadius: '8px', overflow: 'hidden', position: 'relative', background: '#e9e2d4', touchAction: 'none', cursor: 'grab' };
+        vals.refSrc = curRef.src;
+        vals.refImgStyle = { width: '100%', height: 'auto', transform: 'translate(' + rv.offX + 'px,' + rv.offY + 'px) scale(' + rv.scale + ')', transformOrigin: 'top center', display: 'block', pointerEvents: 'none', userSelect: 'none' };
+        const FRAME_H = 260;
+        const refBounds = (scale) => {
+          const contW = (this.refEl && this.refEl.getBoundingClientRect().width) || 400;
+          const natW = curRef.natW || contW, natH = curRef.natH || FRAME_H;
+          const scaledW = contW * scale, scaledH = contW * (natH / natW) * scale;
+          return { x: Math.max(0, (scaledW - contW) / 2), y: Math.max(0, scaledH - FRAME_H) };
+        };
+        const setRefScale = (scale) => {
+          const cur = this.state.refView;
+          scale = Math.min(4, Math.max(1, scale));
+          const b = refBounds(scale);
+          const offX = Math.min(b.x, Math.max(-b.x, cur.offX)), offY = Math.min(0, Math.max(-b.y, cur.offY));
+          this.setState({ refView: { scale, offX, offY } });
+        };
+        vals.onRefWheel = (e) => { e.preventDefault(); setRefScale(this.state.refView.scale - e.deltaY * 0.0015); };
+        vals.zoomIn = () => setRefScale(this.state.refView.scale + 0.25);
+        vals.zoomOut = () => setRefScale(this.state.refView.scale - 0.25);
+        vals.zoomReset = () => this.setState({ refView: { scale: 1, offX: 0, offY: 0 } });
+        vals.onRefDown = (e) => {
+          e.preventDefault();
+          try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+          this.setState({ refDrag: { x: e.clientX, y: e.clientY, offX: rv.offX, offY: rv.offY } });
+        };
+        vals.onRefMove = (e) => {
+          const rd = this.state.refDrag; if (!rd) return;
+          const b = refBounds(this.state.refView.scale);
+          const offX = Math.min(b.x, Math.max(-b.x, rd.offX + (e.clientX - rd.x)));
+          const offY = Math.min(0, Math.max(-b.y, rd.offY + (e.clientY - rd.y)));
+          this.setState({ refView: { ...this.state.refView, offX, offY } });
+        };
+        vals.onRefUp = () => this.setState({ refDrag: null });
+      } else {
+        Object.assign(vals, { refViewportRef: () => {}, refViewportStyle: { display: 'none' }, refSrc: '', refImgStyle: {}, onRefWheel: () => {}, onRefDown: () => {}, onRefMove: () => {}, onRefUp: () => {}, zoomIn: () => {}, zoomOut: () => {}, zoomReset: () => {} });
+      }
+      const si = st.selBinId;
+      const selBin = si ? bins.find(b => b.id === si) : null;
+      vals.selHas = !!selBin; vals.noSel = !selBin;
+      if (selBin) {
+        vals.sel = {
+          label: selBin.label,
+          onLabel: (e) => this.updateBin(cs, si, { label: e.target.value }),
+          labelRef: (el) => {
+            if (el && this.state.justCreatedBinId === si) {
+              el.focus();
+              this.setState({ justCreatedBinId: null });
+            }
+          },
+          posText: this.posLabel(cs, selBin) + ' (row ' + selBin.row + ', col ' + selBin.col + ')',
+          allLevelsChecked: (selBin.levels || []).length === cs.levels.length,
+          onAllLevels: (e) => this.updateBin(cs, si, { levels: e.target.checked ? allLevelIdx() : [activeLevel] }),
+          levelChecks: cs.levels.map((lv, i) => ({
+            name: lv.name, checked: (selBin.levels || []).includes(i),
+            dotStyle: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(cs, i), display: 'inline-block', flexShrink: 0 },
+            onChange: (e) => {
+              let lvls = (selBin.levels || []).slice();
+              if (e.target.checked) { if (!lvls.includes(i)) lvls.push(i); }
+              else { if (lvls.length > 1) lvls = lvls.filter(x => x !== i); }
+              this.updateBin(cs, si, { levels: lvls.sort((a, b) => a - b) });
+            }
+          })),
+          notes: selBin.notes || '',
+          onNotes: (e) => this.updateBin(cs, si, { notes: e.target.value }),
+          imgBoxStyle: { width: '100px', height: '100px', borderRadius: '8px', border: '1px solid #d9cdba', cursor: 'pointer', backgroundImage: 'url(' + (selBin.image || this.DEFAULT_ICON) + ')', backgroundSize: 'cover', backgroundPosition: 'center' },
+          onImage: (e) => { const f = e.target.files && e.target.files[0]; if (f) this.handleBinImage(cs, si, f); },
+          onRemove: () => this.removeBinConfirm(cs, si),
+          onDone: () => this.setState({ selBinId: null })
+        };
+      }
+      vals.cfg = {
+        name: cs.name, onName: (e) => this.updateCase(cs.id, { name: e.target.value }),
+        cols: cs.cols, rows: cs.rows, levelCount: cs.levels.length,
+        onCols: (e) => {
+          const v = Math.max(1, parseInt(e.target.value) || cs.cols);
+          if (v < cs.cols) { for (let i = cs.cols; i > v; i--) if (bins.some(b => b.col + b.colSpan - 1 >= i)) { alert('Cannot shrink columns — bins occupy column ' + i + '.'); return; } }
+          this.updateCase(cs.id, { cols: v });
+        },
+        onRows: (e) => {
+          const v = Math.max(1, parseInt(e.target.value) || cs.rows);
+          if (v < cs.rows) { for (let i = cs.rows; i > v; i--) if (bins.some(b => b.row + b.rowSpan - 1 >= i)) { alert('Cannot shrink rows — bins occupy row ' + i + '.'); return; } }
+          this.updateCase(cs.id, { rows: v });
+        },
+        onLevelCount: (e) => {
+          const v = Math.max(1, parseInt(e.target.value) || cs.levels.length);
+          if (v < cs.levels.length) {
+            for (let i = cs.levels.length - 1; i >= v; i--) if (bins.some(b => (b.levels || []).includes(i))) { alert('Cannot remove level "' + cs.levels[i].name + '" — bins occupy it.'); return; }
+            this.updateCase(cs.id, { levels: cs.levels.slice(0, v) });
+            if (st.activeLevel >= v) this.setState({ activeLevel: v - 1 });
+          } else {
+            const levels = cs.levels.slice();
+            while (levels.length < v) levels.push({ name: String(levels.length + 1), color: this.PAL[levels.length % this.PAL.length] });
+            this.updateCase(cs.id, { levels });
+          }
+        },
+        levelNames: cs.levels.map((lv, i) => ({ name: lv.name, onChange: (e) => this.updateCase(cs.id, { levels: cs.levels.map((l, j) => j === i ? { ...l, name: e.target.value } : l) }) })),
+        hMode: cs.hIndex.mode, onHMode: (e) => this.updateCase(cs.id, { hIndex: { ...cs.hIndex, mode: e.target.value } }),
+        hStart: cs.hIndex.start, onHStart: (e) => this.updateCase(cs.id, { hIndex: { ...cs.hIndex, start: e.target.value } }),
+        hReverse: cs.hIndex.reverse, onHReverse: (e) => this.updateCase(cs.id, { hIndex: { ...cs.hIndex, reverse: e.target.checked } }),
+        vMode: cs.vIndex.mode, onVMode: (e) => this.updateCase(cs.id, { vIndex: { ...cs.vIndex, mode: e.target.value } }),
+        vStart: cs.vIndex.start, onVStart: (e) => this.updateCase(cs.id, { vIndex: { ...cs.vIndex, start: e.target.value } }),
+        vReverse: cs.vIndex.reverse, onVReverse: (e) => this.updateCase(cs.id, { vIndex: { ...cs.vIndex, reverse: e.target.checked } })
+      };
+      const forceCaseProps = bins.length === 0;
+      vals.casePropsOpen = forceCaseProps ? true : st.casePropsOpen;
+      vals.casePropsToggleLabel = forceCaseProps ? '' : (st.casePropsOpen ? 'Hide ▲' : 'Show ▼');
+      vals.toggleCaseProps = forceCaseProps ? () => {} : () => this.setState({ casePropsOpen: !st.casePropsOpen });
+    } else {
+      Object.assign(vals, {
+        builderGridStyle: { display: 'none' }, gridCells: [], binTiles: [],
+        painting: false, paintStyle: {}, onGridDown: () => {}, onGridMove: () => {}, onGridUp: () => {}, onGridCancel: () => {}, onGridContextMenu: () => {},
+        hoverArrow: false, hoverArrowChar: '', hoverArrowStyle: {},
+        levelTabs: [], addLevel: () => {}, selHas: false, noSel: true, sel: {}, cfg: {},
+        refName: '', onRefUpload: () => {}, refToggleLabel: 'Show reference', refToggleStyle: {}, toggleRefOn: () => {}, refDisabled: true,
+        refShow: false, refHasMulti: false, refPrev: () => {}, refNext: () => {},
+        refViewportRef: () => {}, refViewportStyle: { display: 'none' }, refSrc: '', refImgStyle: {}, onRefWheel: () => {}, onRefDown: () => {}, onRefMove: () => {}, onRefUp: () => {}, zoomIn: () => {}, zoomOut: () => {}, zoomReset: () => {},
+        colHeaders: [], rowHeaders: [], colHeaderStyle: {}, rowHeaderStyle: {}, coordsOn: true, onCoordsOn: () => {},
+        showGhosts: false, onShowGhosts: () => {}, ghostTiles: []
+      });
+    }
+    vals.mapLevels = mapCase ? this.buildLevelViews(mapCase) : [];
+    const q = st.query.trim().toLowerCase();
+    const hits = [];
+    if (q) savedCases.forEach(c => c.bins.forEach(b => { if ((b.label || 'Unlabeled').toLowerCase().includes(q)) hits.push({ c, b }); }));
+    vals.searchResults = hits.slice(0, 30).map(({ c, b }) => ({
+      name: b.label || 'Unlabeled',
+      loc: c.name + ' · ' + b.levels.map(i => (c.levels[i] || {}).name).join(',') + ' · ' + this.posLabel(c, b),
+      dot: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(c, b.levels[0] || 0), display: 'inline-block', flexShrink: 0 },
+      go: () => this.setState({ tab: 'map', mapCaseId: c.id })
+    }));
+    const totalBins = savedCases.reduce((n, c) => n + c.bins.length, 0);
+    vals.searchEmpty = (!q && totalBins > 0) || (q && hits.length === 0) || totalBins === 0;
+    vals.searchEmptyMsg = totalBins === 0 ? 'No bins yet — build a case first.' : (q ? 'No match for “' + st.query + '”.' : 'Type a part name to find its bin.');
+    const crop = st.crop;
+    vals.cropOpen = !!crop;
+    if (crop) {
+      vals.cropViewportStyle = { width: '200px', height: '200px', borderRadius: '8px', overflow: 'hidden', position: 'relative', border: '1px solid #d9cdba', touchAction: 'none', cursor: 'grab', background: '#eee' };
+      vals.cropImgStyle = { position: 'absolute', left: crop.offX + 'px', top: crop.offY + 'px', width: (crop.img.width * crop.scale) + 'px', height: (crop.img.height * crop.scale) + 'px', backgroundImage: 'url(' + crop.img.src + ')', backgroundSize: 'cover' };
+      vals.cropMin = crop.minScale; vals.cropMax = crop.minScale * 4; vals.cropScale = crop.scale;
+      vals.onCropZoom = (e) => {
+        const scale = parseFloat(e.target.value);
+        const w = crop.img.width * scale, h = crop.img.height * scale;
+        const offX = Math.min(0, Math.max(200 - w, crop.offX)), offY = Math.min(0, Math.max(200 - h, crop.offY));
+        this.setState({ crop: { ...crop, scale, offX, offY } });
+      };
+      vals.onCropDown = (e) => {
+        e.preventDefault();
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+        this.setState({ crop: { ...crop, dragging: { x: e.clientX, y: e.clientY, offX: crop.offX, offY: crop.offY } } });
+      };
+      vals.onCropMove = (e) => {
+        const c2 = this.state.crop; if (!c2 || !c2.dragging) return;
+        const w = c2.img.width * c2.scale, h = c2.img.height * c2.scale;
+        const offX = Math.min(0, Math.max(200 - w, c2.dragging.offX + (e.clientX - c2.dragging.x)));
+        const offY = Math.min(0, Math.max(200 - h, c2.dragging.offY + (e.clientY - c2.dragging.y)));
+        this.setState({ crop: { ...c2, offX, offY } });
+      };
+      vals.onCropUp = () => { const c2 = this.state.crop; if (c2) this.setState({ crop: { ...c2, dragging: null } }); };
+      vals.cropCancel = () => this.setState({ crop: null });
+      vals.cropConfirm = () => {
+        const c2 = this.state.crop;
+        const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
+        cv.getContext('2d').drawImage(c2.img, c2.offX, c2.offY, c2.img.width * c2.scale, c2.img.height * c2.scale);
+        const bcase = this.getCase(this.state.builderCaseId);
+        this.updateBin(bcase, c2.binId, { image: cv.toDataURL('image/png') });
+        this.setState({ crop: null });
+      };
+    } else {
+      Object.assign(vals, { cropViewportStyle: { display: 'none' }, cropImgStyle: {}, cropMin: 1, cropMax: 4, cropScale: 1, onCropZoom: () => {}, onCropDown: () => {}, onCropMove: () => {}, onCropUp: () => {}, cropCancel: () => {}, cropConfirm: () => {} });
+    }
+    return vals;
+  }
+}
+
+</script>
+</body>
+</html>
