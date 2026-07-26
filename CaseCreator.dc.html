@@ -8,11 +8,11 @@
 <body>
 <x-dc>
 <template id="__bundler_thumbnail">
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#e85d1f"/><g fill="#fff3ea"><rect x="40" y="40" width="52" height="52" rx="4"/><rect x="108" y="40" width="52" height="52" rx="4" opacity="0.55"/><rect x="40" y="108" width="52" height="52" rx="4" opacity="0.55"/><rect x="108" y="108" width="52" height="52" rx="4"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#e85d1f"></rect><g fill="#fff3ea"><rect x="40" y="40" width="52" height="52" rx="4"></rect><rect x="108" y="40" width="52" height="52" rx="4" opacity="0.55"></rect><rect x="40" y="108" width="52" height="52" rx="4" opacity="0.55"></rect><rect x="108" y="108" width="52" height="52" rx="4"></rect></g></svg>
 </template>
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Roboto+Condensed:wght@700&amp;display=swap" rel="stylesheet">
 <style>
 html,body{margin:0;padding:0;background:#f7f3ec;color:#1c1814;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased}
 a{color:#d95511;text-decoration:none}a:hover{color:#b04309;text-decoration:underline}
@@ -168,6 +168,9 @@ input,select,button,textarea{font-family:inherit}
                   <sc-if value="{{ t.multi }}" hint-placeholder-val="{{ false }}">
                     <span style="position:absolute;top:3px;right:5px;font-size:9px;font-weight:800;background:rgba(0,0,0,0.25);border-radius:3px;padding:1px 4px">{{ t.multiLabel }}</span>
                   </sc-if>
+                  <sc-if value="{{ t.hasOverride }}" hint-placeholder-val="{{ false }}">
+                    <span title="Thumbnail text overridden" style="position:absolute;bottom:0;left:0;width:0;height:0;border-style:solid;border-width:12px 0 0 12px;border-color:transparent transparent transparent #1c6fd9"></span>
+                  </sc-if>
                   <sc-if value="{{ t.hasImage }}" hint-placeholder-val="{{ false }}">
                     <span title="Has a custom image" style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 12px 12px 0;border-color:transparent #2f9e44 transparent transparent"></span>
                   </sc-if>
@@ -273,10 +276,16 @@ input,select,button,textarea{font-family:inherit}
               </label>
               <div style="display:flex;flex-direction:column;gap:6px">
                 <span style="font-size:12px;font-weight:600;color:#7a6f61">Part image</span>
-                <label style="{{ sel.imgBoxStyle }}" style-hover="border-color:#e85d1f">
-                  <input type="file" accept="image/*" onChange="{{ sel.onImage }}" style="display:none">
-                </label>
-                <span style="font-size:11px;color:#a0958a">200×200 thumbnail. Click to upload — larger images can be cropped.</span>
+                <div style="position:relative;width:100px;height:100px">
+                  <label style="{{ sel.imgBoxStyle }}" style-hover="border-color:#e85d1f" onDragOver="{{ sel.onImgDragOver }}" onDragLeave="{{ sel.onImgDragLeave }}" onDrop="{{ sel.onImgDrop }}">
+                    <input type="file" accept="image/*" onChange="{{ sel.onImage }}" style="display:none">
+                  </label>
+                  <sc-if value="{{ sel.hasThumbText }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ sel.thumbTextStyle }}">{{ sel.thumbTextLine1 }}<br>{{ sel.thumbTextLine2 }}</div>
+                  </sc-if>
+                  <button onClick="{{ sel.onEditImage }}" title="Edit thumbnail" style="position:absolute;bottom:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;background:#1c1814;color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✎</button>
+                </div>
+                <span style="font-size:11px;color:#a0958a">200×200 thumbnail. Click, or drag an image here — larger images can be cropped.</span>
               </div>
             </sc-if>
           </div>
@@ -339,6 +348,9 @@ input,select,button,textarea{font-family:inherit}
                   <div style="{{ t.style }}" title="{{ t.title }}">
                     <div style="font-weight:700;font-size:11px;line-height:1.25;overflow:hidden">{{ t.name }}</div>
                     <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;opacity:0.85">{{ t.loc }}</div>
+                    <sc-if value="{{ t.hasOverride }}" hint-placeholder-val="{{ false }}">
+                      <span title="Thumbnail text overridden" style="position:absolute;bottom:0;left:0;width:0;height:0;border-style:solid;border-width:12px 0 0 12px;border-color:transparent transparent transparent #1c6fd9"></span>
+                    </sc-if>
                     <sc-if value="{{ t.hasImage }}" hint-placeholder-val="{{ false }}">
                       <span title="Has a custom image" style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 12px 12px 0;border-color:transparent #2f9e44 transparent transparent"></span>
                     </sc-if>
@@ -469,16 +481,58 @@ input,select,button,textarea{font-family:inherit}
 
     <sc-if value="{{ cropOpen }}" hint-placeholder-val="{{ false }}">
       <div style="position:fixed;inset:0;background:rgba(28,24,20,0.6);display:flex;align-items:center;justify-content:center;z-index:50">
-        <div style="background:#fffdf9;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;align-items:center;width:300px">
-          <div style="font-weight:800;font-size:15px">Crop to 200×200</div>
-          <div style="font-size:12px;color:#7a6f61;text-align:center">Image is larger than 200×200 — drag to position, use the slider to zoom, then confirm.</div>
-          <div style="{{ cropViewportStyle }}" ref="{{ cropRef }}" onPointerDown="{{ onCropDown }}" onPointerMove="{{ onCropMove }}" onPointerUp="{{ onCropUp }}" onPointerCancel="{{ onCropUp }}">
-            <div style="{{ cropImgStyle }}"></div>
+        <div style="background:#fffdf9;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;align-items:center;width:400px;max-width:calc(100vw - 40px)">
+          <div style="font-weight:800;font-size:15px">Edit thumbnail</div>
+          <div style="display:flex;gap:6px;width:100%">
+            <button onClick="{{ setToolTransform }}" style="{{ transformToolStyle }}">⤢ Transform</button>
+            <button onClick="{{ setToolFill }}" style="{{ fillToolStyle }}">▭ Fill area</button>
           </div>
-          <input type="range" min="{{ cropMin }}" max="{{ cropMax }}" step="0.001" value="{{ cropScale }}" onChange="{{ onCropZoom }}" style="width:100%">
+          <sc-if value="{{ isTransformTool }}" hint-placeholder-val="{{ true }}">
+            <div style="font-size:11px;color:#7a6f61;text-align:center;line-height:1.4">Drag the image to move it. Click the image once to switch the corner handles between resize (↔) and rotate (↻), then drag a handle. Hold Shift while resizing to lock aspect ratio.</div>
+          </sc-if>
+          <sc-if value="{{ isFillTool }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12px;color:#7a6f61;text-align:center">Drag a box over the area to fill.</div>
+            <div style="display:flex;gap:8px;align-items:center;width:100%">
+              <input type="color" value="{{ fillColorHex }}" onChange="{{ onFillColorPick }}" style="width:30px;height:30px;padding:0;border:none;background:none;cursor:pointer">
+              <input type="text" value="{{ fillColorText }}" onChange="{{ onFillColorText }}" placeholder="#ffffff or rgb(255,255,255)" style="flex:1;padding:7px 8px;border:1px solid #d9cdba;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace">
+            </div>
+            <button onClick="{{ undoFill }}" disabled="{{ noFills }}" style="width:100%;border:1px solid #d9cdba;background:#fff;border-radius:6px;padding:7px;font-size:12px;font-weight:600;cursor:pointer">Undo last fill</button>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:8px;width:100%">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer">
+              <input type="checkbox" checked="{{ overrideChecked }}" onChange="{{ onToggleOverride }}">Override
+            </label>
+            <textarea value="{{ textValue }}" onChange="{{ onTextChange }}" disabled="{{ textDisabled }}" rows="2" maxlength="82" placeholder="Text shown on the thumbnail" style="padding:8px;border:1px solid #d9cdba;border-radius:6px;font-size:13px;font-family:'Roboto Condensed',sans-serif;font-weight:700;resize:vertical;background:{{ textAreaBg }}"></textarea>
+            <div style="font-size:10px;color:#a0958a">Max 2 lines, 40 characters each. Clearing the text hides it.</div>
+            <button onClick="{{ resetThumbText }}" style="width:100%;border:1px solid #d9cdba;background:#fff;border-radius:6px;padding:7px;font-size:12px;font-weight:600;cursor:pointer">Reset default text</button>
+          </div>
+          <div style="{{ cropOuterStyle }}">
+            <div style="{{ cropViewportStyle }}" ref="{{ cropRef }}" onPointerDown="{{ onCropDown }}" onPointerMove="{{ onCropMove }}" onPointerUp="{{ onCropUp }}" onPointerCancel="{{ onCropUp }}">
+              <div style="{{ cropClipStyle }}">
+                <div style="{{ cropWrapStyle }}">
+                  <div style="{{ cropImgStyle }}"></div>
+                </div>
+                <sc-for list="{{ fillRects }}" as="fr" hint-placeholder-count="0">
+                  <div style="{{ fr.style }}"></div>
+                </sc-for>
+                <sc-if value="{{ hasSelectRect }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ selectRectStyle }}"></div>
+                </sc-if>
+                <sc-if value="{{ hasPreviewText }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ previewTextStyle }}">{{ previewTextLine1 }}<br>{{ previewTextLine2 }}</div>
+                </sc-if>
+              </div>
+              <div style="{{ cropMarkerStyle }}"></div>
+              <sc-if value="{{ isTransformTool }}" hint-placeholder-val="{{ true }}">
+                <sc-for list="{{ handles }}" as="h" hint-placeholder-count="4">
+                  <div style="{{ h.style }}" onPointerDown="{{ h.onDown }}" title="{{ h.title }}">{{ h.icon }}</div>
+                </sc-for>
+              </sc-if>
+            </div>
+          </div>
           <div style="display:flex;gap:8px;width:100%">
             <button onClick="{{ cropCancel }}" style="flex:1;border:1px solid #d9cdba;background:#fff;border-radius:7px;padding:10px;font-weight:600;font-size:13px;cursor:pointer">Cancel</button>
-            <button onClick="{{ cropConfirm }}" style="flex:1;border:none;background:#1c1814;color:#fff;border-radius:7px;padding:10px;font-weight:700;font-size:13px;cursor:pointer">Use crop</button>
+            <button onClick="{{ cropConfirm }}" style="flex:1;border:none;background:#1c1814;color:#fff;border-radius:7px;padding:10px;font-weight:700;font-size:13px;cursor:pointer">Update</button>
           </div>
         </div>
       </div>
@@ -739,7 +793,7 @@ class Component extends DCLogic {
       usedIds.add(uniqueId);
       let fname = '';
       if (b.image) {
-        fname = this.sanitize(b.label || b.id) + '.png';
+        fname = uniqueId + '.png';
         const blob = await this.thumbBlob(b.image);
         files.push({ name: dirName + '/Images/' + fname, data: new Uint8Array(await blob.arrayBuffer()) });
       }
@@ -895,9 +949,20 @@ class Component extends DCLogic {
       const raw = localStorage.getItem('cc_cases_v1');
       if (raw) {
         const cases = JSON.parse(raw);
-        if (Array.isArray(cases) && cases.length) this.setState({ data: { cases } });
+        if (Array.isArray(cases) && cases.length) this.setState({ data: { cases: cases.map(c => this.repairCase(c)) } });
       }
     } catch (e) {}
+  }
+  repairCase(cs) {
+    const bins = (cs.bins || []).map(b => {
+      const lv = (b.levels || []).slice().sort((a, c) => a - c);
+      if (!lv.length) return b;
+      const min = lv[0], max = lv[lv.length - 1];
+      if (max - min + 1 === lv.length) return b;
+      const filled = []; for (let i = min; i <= max; i++) filled.push(i);
+      return { ...b, levels: filled };
+    });
+    return { ...cs, bins };
   }
   buildLevelViews(cs) {
     const colHeaders = Array.from({ length: cs.cols }, (_, i) => this.seqLabel(cs.hIndex, i, cs.cols));
@@ -917,6 +982,7 @@ class Component extends DCLogic {
           name: p.label || 'Unlabeled', loc: this.posLabel(cs, p),
           title: (p.label || 'Unlabeled') + ' — ' + lv.name + ' · ' + this.posLabel(cs, p),
           hasImage: !!p.image,
+          hasOverride: !!p.thumbOverride,
           hasNotes: !!(p.notes && p.notes.trim()),
           style: this.tileStyle(p, cs.rows, cs.cols, (p.levels || []).length === cs.levels.length ? this.levelColor(cs, 0) : color, { multiBorderColor: (p.levels || []).length > 1 ? '#000000' : null })
         })),
@@ -926,22 +992,116 @@ class Component extends DCLogic {
   }
   handleBinImage(cs, binId, file) {
     const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        if (img.width > 200 || img.height > 200) {
-          const scale = Math.max(200 / img.width, 200 / img.height);
-          this.setState({ crop: { binId, img, scale, minScale: scale, offX: (200 - img.width * scale) / 2, offY: (200 - img.height * scale) / 2, dragging: null } });
-        } else {
+    reader.onload = () => this.loadImageForBin(cs, binId, reader.result, false);
+    reader.readAsDataURL(file);
+  }
+  wrapThumbText(text) {
+    text = (text || '').replace(/\s+/g, ' ').trim();
+    if (!text) return [];
+    const words = text.split(' ');
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+      if (lines.length >= 2) break;
+      const test = cur ? cur + ' ' + w : w;
+      if (test.length <= 40) { cur = test; continue; }
+      if (cur) lines.push(cur);
+      cur = w.length > 40 ? w.slice(0, 40) : w;
+    }
+    if (cur && lines.length < 2) lines.push(cur);
+    return lines.slice(0, 2).map(l => l.length > 40 ? l.slice(0, 39) + '…' : l);
+  }
+  loadImageForBin(cs, binId, src, isRemoteUrl) {
+    const caseId = cs.id;
+    const bin = cs.bins.find(b => b.id === binId) || {};
+    const img = new Image();
+    if (isRemoteUrl) img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (img.width > 200 || img.height > 200) {
+        const scale = Math.max(200 / img.width, 200 / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        this.setState({ crop: { binId, img, w, h, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: Math.max(20, w * 0.1), dragging: null, remote: isRemoteUrl, tool: 'transform', fills: [], fillColor: '#ffffff', select: null, override: !!bin.thumbOverride, text: bin.thumbOverride ? (bin.thumbText || '') : (bin.label || '') } });
+      } else {
+        try {
           const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
           const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 200, 200);
           ctx.drawImage(img, (200 - img.width) / 2, (200 - img.height) / 2);
-          this.updateBin(cs, binId, { image: cv.toDataURL('image/png') });
+          const liveCase = this.getCase(caseId);
+          if (liveCase && liveCase.bins.some(b => b.id === binId)) this.updateBin(liveCase, binId, { image: cv.toDataURL('image/png') });
+        } catch (e) {
+          this.toast("Couldn't use that image — the source site blocks it. Try saving it first, then upload the file.");
         }
-      };
-      img.src = reader.result;
+      }
     };
-    reader.readAsDataURL(file);
+    img.onerror = () => this.toast("Couldn't load that image.");
+    img.src = src;
+  }
+  openImageEditor(bin) {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.max(200 / img.width, 200 / img.height);
+      const w = img.width * scale, h = img.height * scale;
+      this.setState({ crop: { binId: bin.id, img, w, h, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: Math.max(20, w * 0.1), dragging: null, tool: 'transform', fills: [], fillColor: '#ffffff', select: null, override: !!bin.thumbOverride, text: bin.thumbOverride ? (bin.thumbText || '') : (bin.label || '') } });
+    };
+    img.onerror = () => this.toast("Couldn't load that image.");
+    img.src = bin.image || this.DEFAULT_ICON;
+  }
+  CROP_MARGIN = 70;
+  rotPt(x, y, deg) {
+    const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+    return { x: x * c - y * s, y: x * s + y * c };
+  }
+  onHandleDown(corner, e) {
+    e.preventDefault(); e.stopPropagation();
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+    const c = this.state.crop; if (!c) return;
+    if (c.handleMode === 'rotate') {
+      const rect = this.cropEl.getBoundingClientRect();
+      const p = { x: e.clientX - rect.left - this.CROP_MARGIN, y: e.clientY - rect.top - this.CROP_MARGIN };
+      const startAng = Math.atan2(p.y - c.cy, p.x - c.cx) * 180 / Math.PI;
+      this.setState({ crop: { ...c, dragging: { type: 'rotate', startAng, startRot: c.rot } } });
+    } else {
+      this.setState({ crop: { ...c, dragging: { type: 'resize', corner, startCx: c.cx, startCy: c.cy, startW: c.w, startH: c.h, startRot: c.rot, minW: c.minW || 20 } } });
+    }
+  }
+  validColor(str) {
+    const o = document.createElement('option'); o.style.color = '';
+    o.style.color = str;
+    return o.style.color !== '';
+  }
+  extractDropImage(dt) {
+    if (dt.files && dt.files.length) {
+      const f = Array.from(dt.files).find(f => f.type.startsWith('image/'));
+      if (f) return { file: f };
+    }
+    const uriList = dt.getData('text/uri-list');
+    const plain = dt.getData('text/plain');
+    const html = dt.getData('text/html');
+    let url = uriList || (plain && /^https?:\/\//i.test(plain) ? plain : '');
+    if (!url && html) {
+      const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (m) url = m[1];
+    }
+    url = this.resolveImgUrl(url);
+    return url ? { url } : null;
+  }
+  resolveImgUrl(url) {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      if (/(^|\.)google\./i.test(u.hostname) && u.pathname === '/imgres') {
+        const real = u.searchParams.get('imgurl');
+        if (real) return real;
+      }
+    } catch (e) {}
+    return url;
+  }
+  onBinImageDrop(cs, binId, e) {
+    e.preventDefault();
+    const found = this.extractDropImage(e.dataTransfer);
+    if (!found) return;
+    if (found.file) this.handleBinImage(cs, binId, found.file);
+    else this.loadImageForBin(cs, binId, found.url, true);
   }
   renderVals() {
     const st = this.state, data = st.data, cases = data.cases;
@@ -1072,6 +1232,7 @@ class Component extends DCLogic {
           multi: (p.levels || []).length > 1,
           multiLabel: isAll ? 'ALL' : '×' + (p.levels || []).length,
           hasImage: !!p.image,
+          hasOverride: !!p.thumbOverride,
           hasNotes: !!(p.notes && p.notes.trim()),
           style: this.tileStyle(geom, rows, cols, tileColor, { selected: st.selBinId === p.id, dragging: isMove || isRes, multiBorderColor: (p.levels || []).length > 1 ? '#000000' : null })
         };
@@ -1303,16 +1464,33 @@ class Component extends DCLogic {
             name: lv.name, checked: (selBin.levels || []).includes(i),
             dotStyle: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(cs, i), display: 'inline-block', flexShrink: 0 },
             onChange: (e) => {
-              let lvls = (selBin.levels || []).slice();
-              if (e.target.checked) { if (!lvls.includes(i)) lvls.push(i); }
-              else { if (lvls.length > 1) lvls = lvls.filter(x => x !== i); }
+              let lvls = (selBin.levels || []).slice().sort((a, b) => a - b);
+              const min = lvls.length ? lvls[0] : null, max = lvls.length ? lvls[lvls.length - 1] : null;
+              if (e.target.checked) {
+                if (!lvls.length) { lvls = [i]; }
+                else if (i === min - 1 || i === max + 1) { lvls.push(i); }
+                else if (!lvls.includes(i)) { this.toast('Levels occupied must be contiguous — select a level adjacent to the current range.'); return; }
+              } else {
+                if (lvls.length <= 1) return;
+                if (i === min || i === max) { lvls = lvls.filter(x => x !== i); }
+                else { this.toast("Can't remove a level from the middle of the range — levels occupied must stay contiguous."); return; }
+              }
               this.updateBin(cs, si, { levels: lvls.sort((a, b) => a - b) });
             }
           })),
           notes: selBin.notes || '',
           onNotes: (e) => this.updateBin(cs, si, { notes: e.target.value }),
-          imgBoxStyle: { width: '100px', height: '100px', borderRadius: '8px', border: '1px solid #d9cdba', cursor: 'pointer', backgroundImage: 'url(' + (selBin.image || this.DEFAULT_ICON) + ')', backgroundSize: 'cover', backgroundPosition: 'center' },
+          imgBoxStyle: { display: 'block', width: '100px', height: '100px', borderRadius: '4px', border: (st.imgDragOver ? '2px dashed #e85d1f' : '1px solid #d9cdba'), cursor: 'pointer', backgroundImage: 'url(' + (selBin.image || this.DEFAULT_ICON) + ')', backgroundSize: 'cover', backgroundPosition: 'center' },
           onImage: (e) => { const f = e.target.files && e.target.files[0]; if (f) this.handleBinImage(cs, si, f); },
+          onImgDragOver: (e) => { e.preventDefault(); if (!this.state.imgDragOver) this.setState({ imgDragOver: true }); },
+          onImgDragLeave: () => this.setState({ imgDragOver: false }),
+          onImgDrop: (e) => { this.setState({ imgDragOver: false }); this.onBinImageDrop(cs, si, e); },
+          hasImage: !!selBin.image,
+          onEditImage: () => this.openImageEditor(selBin),
+          hasThumbText: this.wrapThumbText(selBin.thumbOverride ? selBin.thumbText : selBin.label).length > 0,
+          thumbTextLine1: (this.wrapThumbText(selBin.thumbOverride ? selBin.thumbText : selBin.label)[0]) || '',
+          thumbTextLine2: (this.wrapThumbText(selBin.thumbOverride ? selBin.thumbText : selBin.label)[1]) || '',
+          thumbTextStyle: { position: 'absolute', bottom: '4px', right: '6px', left: '6px', textAlign: 'right', color: '#000', fontFamily: "'Roboto Condensed',sans-serif", fontWeight: 700, fontSize: '13px', lineHeight: '1.2', textShadow: '0 0 3px #fff, 0 0 3px #fff', pointerEvents: 'none', overflow: 'hidden' },
           onRemove: () => this.removeBinConfirm(cs, si),
           onDone: () => this.setState({ selBinId: null })
         };
@@ -1383,39 +1561,136 @@ class Component extends DCLogic {
     const crop = st.crop;
     vals.cropOpen = !!crop;
     if (crop) {
-      vals.cropViewportStyle = { width: '200px', height: '200px', borderRadius: '8px', overflow: 'hidden', position: 'relative', border: '1px solid #d9cdba', touchAction: 'none', cursor: 'grab', background: '#eee' };
-      vals.cropImgStyle = { position: 'absolute', left: crop.offX + 'px', top: crop.offY + 'px', width: (crop.img.width * crop.scale) + 'px', height: (crop.img.height * crop.scale) + 'px', backgroundImage: 'url(' + crop.img.src + ')', backgroundSize: 'cover' };
-      vals.cropMin = crop.minScale; vals.cropMax = crop.minScale * 4; vals.cropScale = crop.scale;
-      vals.onCropZoom = (e) => {
-        const scale = parseFloat(e.target.value);
-        const w = crop.img.width * scale, h = crop.img.height * scale;
-        const offX = Math.min(0, Math.max(200 - w, crop.offX)), offY = Math.min(0, Math.max(200 - h, crop.offY));
-        this.setState({ crop: { ...crop, scale, offX, offY } });
+      const tool = crop.tool || 'transform';
+      vals.isTransformTool = tool === 'transform'; vals.isFillTool = tool === 'fill';
+      vals.transformToolStyle = { flex: 1, border: '1px solid ' + (tool === 'transform' ? '#e85d1f' : '#d9cdba'), background: tool === 'transform' ? '#e85d1f' : '#fff', color: tool === 'transform' ? '#fff' : '#1c1814', borderRadius: '6px', padding: '7px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' };
+      vals.fillToolStyle = { flex: 1, border: '1px solid ' + (tool === 'fill' ? '#e85d1f' : '#d9cdba'), background: tool === 'fill' ? '#e85d1f' : '#fff', color: tool === 'fill' ? '#fff' : '#1c1814', borderRadius: '6px', padding: '7px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' };
+      vals.setToolTransform = () => this.setState({ crop: { ...crop, tool: 'transform', dragging: null, select: null } });
+      vals.setToolFill = () => this.setState({ crop: { ...crop, tool: 'fill', dragging: null, select: null } });
+      const liveBin = (this.getCase(this.state.builderCaseId) || { bins: [] }).bins.find(b => b.id === crop.binId);
+      const effText = crop.override ? (crop.text || '') : ((liveBin && liveBin.label) || crop.text || '');
+      vals.overrideChecked = !!crop.override;
+      vals.onToggleOverride = (e) => {
+        const on = e.target.checked;
+        this.setState({ crop: { ...crop, override: on, text: on ? (crop.text || (liveBin && liveBin.label) || '') : crop.text } });
       };
+      vals.textValue = effText;
+      vals.textDisabled = !crop.override;
+      vals.textAreaBg = crop.override ? '#fff' : '#f2ede4';
+      vals.onTextChange = (e) => this.setState({ crop: { ...crop, text: e.target.value } });
+      vals.resetThumbText = () => this.setState({ crop: { ...crop, override: false, text: (liveBin && liveBin.label) || '' } });
+      const previewLines = this.wrapThumbText(effText);
+      vals.hasPreviewText = previewLines.length > 0;
+      vals.previewTextLine1 = previewLines[0] || ''; vals.previewTextLine2 = previewLines[1] || '';
+      vals.previewTextStyle = { position: 'absolute', bottom: '8px', right: '12px', left: '12px', textAlign: 'right', color: '#000', fontFamily: "'Roboto Condensed',sans-serif", fontWeight: 700, fontSize: '26px', lineHeight: '1.25', textShadow: '0 0 3px #fff, 0 0 3px #fff', pointerEvents: 'none', overflow: 'hidden' };
+      vals.cropOuterStyle = { position: 'relative', width: (200 + 2 * this.CROP_MARGIN) + 'px', height: (200 + 2 * this.CROP_MARGIN) + 'px' };
+      vals.cropViewportStyle = { position: 'relative', width: '100%', height: '100%', touchAction: 'none', cursor: tool === 'fill' ? 'crosshair' : 'grab' };
+      vals.cropMarkerStyle = { position: 'absolute', left: this.CROP_MARGIN + 'px', top: this.CROP_MARGIN + 'px', width: '200px', height: '200px', border: '2px dashed #9a9a9a', borderRadius: '8px', pointerEvents: 'none', boxShadow: '0 0 0 1px #fff' };
+      vals.cropClipStyle = { position: 'absolute', left: this.CROP_MARGIN + 'px', top: this.CROP_MARGIN + 'px', width: '200px', height: '200px', overflow: 'hidden', borderRadius: '8px', background: '#eee' };
+      vals.cropWrapStyle = { position: 'absolute', left: crop.cx + 'px', top: crop.cy + 'px', width: '0', height: '0', transform: 'rotate(' + crop.rot + 'deg)' };
+      vals.cropImgStyle = { position: 'absolute', left: (-crop.w / 2) + 'px', top: (-crop.h / 2) + 'px', width: crop.w + 'px', height: crop.h + 'px', backgroundImage: 'url(' + crop.img.src + ')', backgroundSize: '100% 100%' };
+      const fills = crop.fills || [];
+      vals.fillRects = fills.map((f, i) => ({ style: { position: 'absolute', left: f.x + 'px', top: f.y + 'px', width: f.w + 'px', height: f.h + 'px', background: f.color, pointerEvents: 'none' } }));
+      vals.noFills = fills.length === 0;
+      vals.undoFill = () => this.setState({ crop: { ...crop, fills: fills.slice(0, -1) } });
+      vals.fillColorHex = /^#[0-9a-f]{6}$/i.test(crop.fillColor) ? crop.fillColor : '#ffffff';
+      vals.fillColorText = crop.fillColor || '#ffffff';
+      vals.onFillColorPick = (e) => this.setState({ crop: { ...crop, fillColor: e.target.value } });
+      vals.onFillColorText = (e) => { const v = e.target.value; if (this.validColor(v)) this.setState({ crop: { ...crop, fillColor: v } }); else this.toast('Not a recognized color — use hex (#rrggbb) or rgb(r,g,b).'); };
+      vals.hasSelectRect = !!crop.select;
+      if (crop.select) {
+        const s = crop.select;
+        const x = Math.min(s.x0, s.x), y = Math.min(s.y0, s.y), w = Math.abs(s.x - s.x0), h = Math.abs(s.y - s.y0);
+        vals.selectRectStyle = { position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', background: 'rgba(232,93,31,0.25)', border: '1px dashed #e85d1f', pointerEvents: 'none' };
+      } else vals.selectRectStyle = { display: 'none' };
+      const SIGNS = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+      const M = this.CROP_MARGIN;
+      const toViewport = (e) => { const r = this.cropEl.getBoundingClientRect(); return { x: e.clientX - r.left - M, y: e.clientY - r.top - M }; };
+      const toLocalClamped = (e) => { const p = toViewport(e); return { x: Math.min(200, Math.max(0, p.x)), y: Math.min(200, Math.max(0, p.y)) }; };
+      vals.handles = crop.handleMode === 'rotate'
+        ? SIGNS.map((s, i) => ({ icon: '↻', title: 'Drag to rotate', style: { position: 'absolute', left: (M + crop.cx + this.rotPt(s[0] * crop.w / 2, s[1] * crop.h / 2, crop.rot).x - 11) + 'px', top: (M + crop.cy + this.rotPt(s[0] * crop.w / 2, s[1] * crop.h / 2, crop.rot).y - 11) + 'px', width: '22px', height: '22px', borderRadius: '50%', background: '#fff', border: '2px solid #2f7fb8', color: '#2f7fb8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', cursor: 'grab', userSelect: 'none' }, onDown: (e) => this.onHandleDown(i, e) }))
+        : SIGNS.map((s, i) => ({ icon: '', title: 'Drag to resize', style: { position: 'absolute', left: (M + crop.cx + this.rotPt(s[0] * crop.w / 2, s[1] * crop.h / 2, crop.rot).x - 7) + 'px', top: (M + crop.cy + this.rotPt(s[0] * crop.w / 2, s[1] * crop.h / 2, crop.rot).y - 7) + 'px', width: '14px', height: '14px', borderRadius: '3px', background: '#fff', border: '2px solid #e85d1f', cursor: (i % 2 === 0 ? 'nwse-resize' : 'nesw-resize') }, onDown: (e) => this.onHandleDown(i, e) }));
       vals.onCropDown = (e) => {
         e.preventDefault();
         try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
-        this.setState({ crop: { ...crop, dragging: { x: e.clientX, y: e.clientY, offX: crop.offX, offY: crop.offY } } });
+        if (tool === 'fill') {
+          const p = toLocalClamped(e);
+          this.setState({ crop: { ...crop, select: { x0: p.x, y0: p.y, x: p.x, y: p.y } } });
+        } else {
+          this.setState({ crop: { ...crop, dragging: { type: 'move', startX: e.clientX, startY: e.clientY, startCx: crop.cx, startCy: crop.cy, moved: false } } });
+        }
       };
       vals.onCropMove = (e) => {
-        const c2 = this.state.crop; if (!c2 || !c2.dragging) return;
-        const w = c2.img.width * c2.scale, h = c2.img.height * c2.scale;
-        const offX = Math.min(0, Math.max(200 - w, c2.dragging.offX + (e.clientX - c2.dragging.x)));
-        const offY = Math.min(0, Math.max(200 - h, c2.dragging.offY + (e.clientY - c2.dragging.y)));
-        this.setState({ crop: { ...c2, offX, offY } });
+        const c2 = this.state.crop; if (!c2) return;
+        if ((c2.tool || 'transform') === 'fill') {
+          if (!c2.select) return;
+          const p = toLocalClamped(e);
+          this.setState({ crop: { ...c2, select: { ...c2.select, x: p.x, y: p.y } } });
+          return;
+        }
+        const d = c2.dragging; if (!d) return;
+        if (d.type === 'move') {
+          const dx = e.clientX - d.startX, dy = e.clientY - d.startY;
+          const moved = d.moved || Math.abs(dx) > 4 || Math.abs(dy) > 4;
+          this.setState({ crop: { ...c2, cx: d.startCx + dx, cy: d.startCy + dy, dragging: { ...d, moved } } });
+        } else if (d.type === 'resize') {
+          const p = toViewport(e);
+          const deltaWorld = { x: p.x - d.startCx, y: p.y - d.startCy };
+          const local = this.rotPt(deltaWorld.x, deltaWorld.y, -d.startRot);
+          const s = SIGNS[d.corner];
+          let rawW = Math.max(d.minW, s[0] * local.x), rawH = Math.max(d.minW, s[1] * local.y);
+          if (e.shiftKey) { const sc = Math.max(rawW / d.startW, rawH / d.startH); rawW = d.startW * sc; rawH = d.startH * sc; }
+          const anchor = { x: -s[0] * d.startW / 2, y: -s[1] * d.startH / 2 };
+          const dragged = { x: anchor.x + s[0] * rawW, y: anchor.y + s[1] * rawH };
+          const centerLocalOff = { x: (anchor.x + dragged.x) / 2, y: (anchor.y + dragged.y) / 2 };
+          const centerWorldOff = this.rotPt(centerLocalOff.x, centerLocalOff.y, d.startRot);
+          this.setState({ crop: { ...c2, w: rawW, h: rawH, cx: d.startCx + centerWorldOff.x, cy: d.startCy + centerWorldOff.y } });
+        } else if (d.type === 'rotate') {
+          const p = toViewport(e);
+          const ang = Math.atan2(p.y - c2.cy, p.x - c2.cx) * 180 / Math.PI;
+          this.setState({ crop: { ...c2, rot: d.startRot + (ang - d.startAng) } });
+        }
       };
-      vals.onCropUp = () => { const c2 = this.state.crop; if (c2) this.setState({ crop: { ...c2, dragging: null } }); };
+      vals.onCropUp = () => {
+        const c2 = this.state.crop; if (!c2) return;
+        if ((c2.tool || 'transform') === 'fill' && c2.select) {
+          const s = c2.select;
+          const x = Math.min(s.x0, s.x), y = Math.min(s.y0, s.y), w = Math.abs(s.x - s.x0), h = Math.abs(s.y - s.y0);
+          const fills = (w > 3 && h > 3) ? (c2.fills || []).concat([{ x, y, w, h, color: c2.fillColor || '#ffffff' }]) : (c2.fills || []);
+          this.setState({ crop: { ...c2, select: null, fills } });
+          return;
+        }
+        const d = c2.dragging;
+        if (d && d.type === 'move' && !d.moved) {
+          this.setState({ crop: { ...c2, dragging: null, handleMode: c2.handleMode === 'rotate' ? 'resize' : 'rotate' } });
+          return;
+        }
+        this.setState({ crop: { ...c2, dragging: null } });
+      };
       vals.cropCancel = () => this.setState({ crop: null });
       vals.cropConfirm = () => {
         const c2 = this.state.crop;
         const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
-        cv.getContext('2d').drawImage(c2.img, c2.offX, c2.offY, c2.img.width * c2.scale, c2.img.height * c2.scale);
+        const ctx = cv.getContext('2d');
+        ctx.save();
+        ctx.translate(c2.cx, c2.cy);
+        ctx.rotate(c2.rot * Math.PI / 180);
+        ctx.drawImage(c2.img, -c2.w / 2, -c2.h / 2, c2.w, c2.h);
+        ctx.restore();
+        (c2.fills || []).forEach(f => { ctx.fillStyle = f.color; ctx.fillRect(f.x, f.y, f.w, f.h); });
         const bcase = this.getCase(this.state.builderCaseId);
-        this.updateBin(bcase, c2.binId, { image: cv.toDataURL('image/png') });
-        this.setState({ crop: null });
+        const liveBin2 = bcase && bcase.bins.find(b => b.id === c2.binId);
+        const finalText = c2.override ? (c2.text || '') : ((liveBin2 && liveBin2.label) || '');
+        try {
+          this.updateBin(bcase, c2.binId, { image: cv.toDataURL('image/png'), thumbOverride: !!c2.override, thumbText: c2.override ? finalText : (c2.text || '') });
+          this.setState({ crop: null });
+        } catch (e) {
+          this.setState({ crop: null });
+          this.toast("Couldn't use that image — the source site blocks it. Try saving it first, then upload the file.");
+        }
       };
     } else {
-      Object.assign(vals, { cropViewportStyle: { display: 'none' }, cropImgStyle: {}, cropMin: 1, cropMax: 4, cropScale: 1, onCropZoom: () => {}, onCropDown: () => {}, onCropMove: () => {}, onCropUp: () => {}, cropCancel: () => {}, cropConfirm: () => {} });
+      Object.assign(vals, { cropOuterStyle: { display: 'none' }, cropViewportStyle: {}, cropMarkerStyle: {}, cropClipStyle: {}, cropWrapStyle: {}, cropImgStyle: {}, onCropDown: () => {}, onCropMove: () => {}, onCropUp: () => {}, cropCancel: () => {}, cropConfirm: () => {}, isTransformTool: true, isFillTool: false, transformToolStyle: {}, fillToolStyle: {}, setToolTransform: () => {}, setToolFill: () => {}, handles: [], fillRects: [], noFills: true, undoFill: () => {}, fillColorHex: '#ffffff', fillColorText: '#ffffff', onFillColorPick: () => {}, onFillColorText: () => {}, hasSelectRect: false, selectRectStyle: { display: 'none' }, overrideChecked: false, onToggleOverride: () => {}, textValue: '', textDisabled: true, textAreaBg: '#f2ede4', onTextChange: () => {}, resetThumbText: () => {}, hasPreviewText: false, previewTextLine1: '', previewTextLine2: '', previewTextStyle: { display: 'none' } });
     }
     return vals;
   }
