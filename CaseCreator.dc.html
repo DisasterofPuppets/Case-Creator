@@ -461,20 +461,15 @@ input,select,button,textarea{font-family:inherit}
                 </div>
               </div>
               <sc-if value="{{ s.show3d }}" hint-placeholder-val="{{ false }}">
-                <div style="width:200px;height:200px;flexShrink:0;position:relative;perspective:700px;paddingRight:10px;boxSizing:content-box">
+                <div style="width:200px;height:200px;flexShrink:0;position:relative;paddingRight:10px;boxSizing:content-box">
                   <div style="{{ s.threeD.outerStyle }}">
-                    <div style="{{ s.threeD.worldStyle }}">
-                      <sc-for list="{{ s.threeD.emptyCells }}" as="ec" hint-placeholder-count="0">
-                        <div style="{{ ec.style }}"></div>
-                      </sc-for>
-                      <sc-for list="{{ s.threeD.boxes }}" as="bx" hint-placeholder-count="0">
-                        <div style="{{ bx.wrapStyle }}">
-                          <div style="{{ bx.frontStyle }}"></div>
-                          <div style="{{ bx.rightStyle }}"></div>
-                          <div style="{{ bx.topStyle }}"></div>
-                        </div>
-                      </sc-for>
-                    </div>
+                    <sc-for list="{{ s.threeD.items }}" as="it" hint-placeholder-count="0">
+                      <sc-if value="{{ it.isBox }}" hint-placeholder-val="{{ false }}">
+                        <div style="{{ it.frontStyle }}"></div>
+                        <div style="{{ it.rightStyle }}"></div>
+                        <div style="{{ it.topStyle }}"></div>
+                      </sc-if>
+                    </sc-for>
                   </div>
                 </div>
               </sc-if>
@@ -757,44 +752,60 @@ class Component extends DCLogic {
   }
   buildCaseScene(c, targetBin, hovered, minLvl) {
     const rows = c.rows, cols = c.cols, N = c.levels.length;
-    const CELL = 16, GAP = 1, WALLH = 10, LEVELGAP = 18;
-    const planeW = cols * CELL + (cols - 1) * GAP, planeH = rows * CELL + (rows - 1) * GAP;
-    const overlaps = (b, row, col, rowSpan, colSpan) => b.row < row + rowSpan && b.row + (b.rowSpan || 1) > row && b.col < col + colSpan && b.col + (b.colSpan || 1) > col;
+    const DX = 12, DY = 6, WALLH = 16, LEVELGAP = WALLH;
     const covers = (b, r, col) => r >= b.row && r < b.row + (b.rowSpan || 1) && col >= b.col && col < b.col + (b.colSpan || 1);
-    const px = (col) => (col - 1) * (CELL + GAP);
-    const emptyCells = [];
-    const boxes = [];
+    const proj = (col, row, z) => ({ x: (col - row) * DX, y: (col + row) * DY - z });
+    const polyFace = (pts, color, extra) => {
+      const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+      const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+      const pct = (v, min, span) => ((v - min) / span * 100).toFixed(2) + '%';
+      const poly = pts.map(p => pct(p.x, minX, w) + ' ' + pct(p.y, minY, h)).join(',');
+      return Object.assign({ position: 'absolute', left: minX + 'px', top: minY + 'px', width: w + 'px', height: h + 'px', background: color, clipPath: 'polygon(' + poly + ')' }, extra || {});
+    };
+    let minX = 0, maxX = 0, minY = 0, maxY = 0;
+    const track = (p) => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); };
+    const levelZ = (li) => (N - 1 - li) * LEVELGAP;
+    const GAP = 0.12;
+    const items = [];
     for (let li = 0; li < N; li++) {
-      const levelZ = (N - 1 - li) * LEVELGAP;
       const levelBins = c.bins.filter(bn => (bn.levels || []).includes(li));
+      const z0 = levelZ(li), z1 = z0 + WALLH;
       for (let r = 1; r <= rows; r++) for (let col = 1; col <= cols; col++) {
-        if (!levelBins.some(bn => covers(bn, r, col))) {
-          emptyCells.push({ style: { position: 'absolute', left: px(col) + 'px', top: px(r) + 'px', width: CELL + 'px', height: CELL + 'px', background: 'transparent', border: '1px dotted rgba(0,0,0,0.22)', transform: 'translateZ(' + levelZ + 'px)' } });
-        }
-      }
-      levelBins.forEach(bn => {
-        const rowSpan = bn.rowSpan || 1, colSpan = bn.colSpan || 1;
-        const w = colSpan * CELL + (colSpan - 1) * GAP, h = rowSpan * CELL + (rowSpan - 1) * GAP;
-        const isTargetBox = bn.id === targetBin.id && li === minLvl;
-        const isBlocker = li < minLvl && overlaps(bn, targetBin.row, targetBin.col, targetBin.rowSpan || 1, targetBin.colSpan || 1);
-        const color = this.levelColor(c, li);
-        const extraZ = hovered && isBlocker ? 40 : (hovered && isTargetBox ? (LEVELGAP + 16) : 0);
-        const scale = isTargetBox && hovered ? ' scale(1.06)' : '';
-        const glow = isTargetBox && hovered ? 'ccFlashColor 2s steps(1) infinite' : 'none';
-        boxes.push({
-          wrapStyle: { position: 'absolute', left: px(bn.col) + 'px', top: px(bn.row) + 'px', width: w + 'px', height: h + 'px', transformStyle: 'preserve-3d', transform: 'translateZ(' + (levelZ + extraZ) + 'px)' + scale, transition: 'transform 0.4s ease' },
-          frontStyle: { position: 'absolute', left: '0', top: h + 'px', width: w + 'px', height: WALLH + 'px', background: 'linear-gradient(to bottom, ' + this.lightenColor(color, 2) + ' 0, ' + this.lightenColor(color, 2) + ' 2px, ' + this.darkenColor(color, 55) + ' 2px)', transformOrigin: 'top', transform: 'rotateX(90deg)', '--fc': this.darkenColor(color, 55), animation: glow },
-          rightStyle: { position: 'absolute', left: w + 'px', top: '0', width: WALLH + 'px', height: h + 'px', background: 'linear-gradient(to bottom, ' + this.lightenColor(color, 1) + ' 0, ' + this.lightenColor(color, 1) + ' 2px, ' + this.darkenColor(color, 30) + ' 2px)', transformOrigin: 'left', transform: 'rotateY(-90deg)', '--fc': this.darkenColor(color, 30), animation: glow },
-          topStyle: { position: 'absolute', left: '0', top: '0', width: w + 'px', height: h + 'px', background: color, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.15)', transform: 'translateZ(' + WALLH + 'px)', '--fc': color, animation: glow }
+        const bn = levelBins.find(b => covers(b, r, col));
+        if (!bn) continue;
+        const isTargetCell = bn.id === targetBin.id;
+        const isXray = !isTargetCell && li < minLvl;
+        const binTopLvl = Math.min(...(bn.levels || [li]));
+        const trueColor = this.levelColor(c, binTopLvl);
+        const color = hovered && isXray ? '#f2f2f0' : trueColor;
+        const opacity = hovered && isXray ? 0.16 : 1;
+        const glow = isTargetCell && hovered ? 'ccFlashColor 1.4s ease-in-out infinite' : 'none';
+        const trans = 'opacity 0.35s ease, background 0.35s ease';
+        const A0 = proj(col - 1 + GAP, r - 1 + GAP, z1), B0 = proj(col - GAP, r - 1 + GAP, z1), C0 = proj(col - 1 + GAP, r - GAP, z1), D0 = proj(col - GAP, r - GAP, z1);
+        const Cb = proj(col - 1 + GAP, r - GAP, z0), Db = proj(col - GAP, r - GAP, z0), Bb = proj(col - GAP, r - 1 + GAP, z0);
+        [A0, B0, C0, D0, Cb, Db, Bb].forEach(track);
+        items.push({
+          depth: r + col, lvl: li, kind: 'box',
+          topStyle: Object.assign(polyFace([A0, B0, D0, C0], color), { '--fc': color, animation: glow, opacity, transition: trans }),
+          frontStyle: Object.assign(polyFace([Cb, Db, D0, C0], this.darkenColor(color, 45)), { '--fc': this.darkenColor(color, 45), animation: glow, opacity, transition: trans }),
+          rightStyle: Object.assign(polyFace([Bb, Db, D0, B0], this.darkenColor(color, 25)), { '--fc': this.darkenColor(color, 25), animation: glow, opacity, transition: trans })
         });
-      });
+      }
     }
-    const naturalW = (planeW + planeH) * 0.72, naturalH = (planeW + planeH) * 0.42 + (WALLH + 70);
-    const fitScale = Math.min(215 / naturalW, 205 / naturalH);
+    items.sort((a, b) => (a.depth - b.depth) || (b.lvl - a.lvl));
+    const padding = 20;
+    const totalW = (maxX - minX) + padding * 2, totalH = (maxY - minY) + padding * 2;
+    const shiftX = -minX + padding, shiftY = -minY + padding;
+    const shift = (st) => Object.assign({}, st, { left: (parseFloat(st.left) + shiftX) + 'px', top: (parseFloat(st.top) + shiftY) + 'px' });
+    items.forEach(it => {
+      it.topStyle = shift(it.topStyle); it.frontStyle = shift(it.frontStyle); it.rightStyle = shift(it.rightStyle);
+      it.isBox = true;
+    });
+    const fitScale = Math.min(215 / totalW, 205 / totalH);
     return {
-      outerStyle: { position: 'absolute', left: '50%', top: '50%', width: planeW + 'px', height: planeH + 'px', transform: 'translate(-50%,-50%) translateY(6px) scale(' + fitScale + ')', transformOrigin: 'center' },
-      worldStyle: { width: '100%', height: '100%', position: 'relative', transformStyle: 'preserve-3d', transform: 'rotateX(55deg) rotateZ(45deg)' },
-      emptyCells, boxes
+      outerStyle: { position: 'absolute', left: '50%', top: '50%', width: totalW + 'px', height: totalH + 'px', transform: 'translate(-50%,-50%) scale(' + fitScale + ')', transformOrigin: 'center' },
+      items
     };
   }
   gridStyles(rows, cols, interactive, cs, coordsOn) {
