@@ -52,6 +52,7 @@ input,select,button,textarea{font-family:inherit}
       <button onClick="{{ goMap }}" style="{{ navStyles.map }}" style-hover="border-color:#e85d1f">View Cases</button>
       <button onClick="{{ goImportExport }}" style="{{ navStyles.importexport }}" style-hover="border-color:#e85d1f">Import / Export</button>
       <button onClick="{{ goHelp }}" style="{{ navStyles.help }}" style-hover="border-color:#e85d1f">Help</button>
+      <button onClick="{{ goThumbEditor }}" style="{{ navStyles.thumbeditor }}" style-hover="border-color:#e85d1f">Thumbnail Editor</button>
     </nav>
 
     <sc-if value="{{ showBuilder }}" hint-placeholder-val="{{ false }}">
@@ -95,7 +96,9 @@ input,select,button,textarea{font-family:inherit}
           </div>
           <sc-if value="{{ refShow }}" hint-placeholder-val="{{ false }}">
             <div style="{{ refViewportStyle }}" ref="{{ refViewportRef }}" onWheel="{{ onRefWheel }}" onPointerDown="{{ onRefDown }}" onPointerMove="{{ onRefMove }}" onPointerUp="{{ onRefUp }}" onPointerCancel="{{ onRefUp }}">
-              <img src="{{ refSrc }}" draggable="false" style="{{ refImgStyle }}">
+              <sc-if value="{{ hasRefSrc }}" hint-placeholder-val="{{ false }}">
+                <img src="{{ refSrc }}" draggable="false" style="{{ refImgStyle }}">
+              </sc-if>
               <sc-if value="{{ refHasMulti }}" hint-placeholder-val="{{ false }}">
                 <button onClick="{{ refPrev }}" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:none;background:rgba(28,24,20,0.65);color:#fff;font-size:16px;cursor:pointer">‹</button>
                 <button onClick="{{ refNext }}" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:none;background:rgba(28,24,20,0.65);color:#fff;font-size:16px;cursor:pointer">›</button>
@@ -274,18 +277,23 @@ input,select,button,textarea{font-family:inherit}
                 <span style="font-size:12px;font-weight:600;color:#7a6f61">Notes</span>
                 <textarea value="{{ sel.notes }}" onChange="{{ sel.onNotes }}" rows="3" style="padding:9px;border:1px solid #d9cdba;border-radius:7px;font-size:13px;resize:vertical"></textarea>
               </label>
-              <div style="display:flex;flex-direction:column;gap:6px">
-                <span style="font-size:12px;font-weight:600;color:#7a6f61">Part image</span>
-                <div style="position:relative;width:100px;height:100px">
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center">
+                <span style="font-size:12px;font-weight:600;color:#7a6f61;align-self:stretch">Part image</span>
+                <div style="position:relative;width:100px;height:100px;margin:0 auto" onMouseEnter="{{ sel.onImgHoverOn }}" onMouseLeave="{{ sel.onImgHoverOff }}">
                   <label style="{{ sel.imgBoxStyle }}" style-hover="border-color:#e85d1f" onDragOver="{{ sel.onImgDragOver }}" onDragLeave="{{ sel.onImgDragLeave }}" onDrop="{{ sel.onImgDrop }}">
                     <input type="file" accept="image/*" onChange="{{ sel.onImage }}" style="display:none">
                   </label>
                   <sc-if value="{{ sel.hasThumbText }}" hint-placeholder-val="{{ false }}">
                     <div style="{{ sel.thumbTextStyle }}">{{ sel.thumbTextLine1 }}<br>{{ sel.thumbTextLine2 }}</div>
                   </sc-if>
-                  <button onClick="{{ sel.onEditImage }}" title="Edit thumbnail" style="position:absolute;bottom:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;background:#1c1814;color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✎</button>
+                  <sc-if value="{{ sel.showAddImageHint }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;inset:0;border-radius:4px;background:rgba(28,24,20,0.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;pointer-events:none">Add Image</div>
+                  </sc-if>
                 </div>
-                <span style="font-size:11px;color:#a0958a">200×200 thumbnail. Click, or drag an image here — larger images can be cropped.</span>
+                <div style="text-align:center;display:flex;flex-direction:column;gap:4px">
+                  <a href="#" onClick="{{ sel.onEditImage }}" style="font-size:12px;font-weight:700">Edit Thumbnail</a>
+                  <span style="font-size:11px;color:#a0958a">Click the above image to add, or drag another image onto it. This will open the editor and allow cropping / scaling to match the 200 x 200 pixel ratio.</span>
+                </div>
               </div>
             </sc-if>
           </div>
@@ -479,9 +487,85 @@ input,select,button,textarea{font-family:inherit}
     </section>
     </sc-if>
 
+    <sc-if value="{{ showThumbEditor }}" hint-placeholder-val="{{ false }}">
+    <section data-screen-label="Thumbnail Editor" style="display:flex;flex-direction:column;gap:16px;align-items:center;background:#e4ded2;border-radius:12px;padding:20px;box-sizing:border-box">
+      <div style="width:100%;max-width:900px;display:flex;flex-direction:column;gap:16px">
+        <sc-if value="{{ stNoCrop }}" hint-placeholder-val="{{ true }}">
+          <label style="border:2px dashed #d9cdba;border-radius:12px;padding:40px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;background:#e4ded2" style-hover="border-color:#e85d1f" onDragOver="{{ stOnDragOver }}" onDragLeave="{{ stOnDragLeave }}" onDrop="{{ stOnDrop }}">
+            <div style="font-weight:700;font-size:14px">Click to select or drag an image here to see additional editor settings.</div>
+            <input type="file" accept="image/*" onChange="{{ stOnUpload }}" style="display:none">
+          </label>
+        </sc-if>
+
+        <sc-if value="{{ stHasCrop }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;background:#e4ded2;border:1px solid #d9cdba;border-radius:12px;padding:20px">
+            <div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:14px;align-items:center">
+              <div style="{{ stOuterStyle }}">
+                <div style="{{ stViewportStyle }}" ref="{{ stCropRef }}" onPointerDown="{{ stOnCropDown }}" onPointerMove="{{ stOnCropMove }}" onPointerUp="{{ stOnCropUp }}" onPointerCancel="{{ stOnCropUp }}">
+                  <div style="{{ stClipStyle }}">
+                    <div style="{{ stWrapStyle }}">
+                      <div style="{{ stImgStyle }}"></div>
+                    </div>
+                    <sc-for list="{{ stFillRects }}" as="fr" hint-placeholder-count="0">
+                      <div style="{{ fr.style }}"></div>
+                    </sc-for>
+                    <sc-if value="{{ stHasSelectRect }}" hint-placeholder-val="{{ false }}">
+                      <div style="{{ stSelectRectStyle }}"></div>
+                    </sc-if>
+                    <sc-if value="{{ stHasPreviewText }}" hint-placeholder-val="{{ false }}">
+                      <div style="{{ stPreviewTextStyle }}">{{ stPreviewTextLine1 }}<br>{{ stPreviewTextLine2 }}</div>
+                    </sc-if>
+                  </div>
+                  <div style="{{ stMarkerStyle }}"></div>
+                  <sc-if value="{{ stIsTransformTool }}" hint-placeholder-val="{{ true }}">
+                    <sc-for list="{{ stHandles }}" as="h" hint-placeholder-count="4">
+                      <div style="{{ h.style }}" onPointerDown="{{ h.onDown }}" title="{{ h.title }}">{{ h.icon }}</div>
+                    </sc-for>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+
+            <div style="flex:1;min-width:260px;display:flex;flex-direction:column;gap:14px;background:#fff;border:1px solid #e6dccd;border-radius:12px;padding:12px;box-sizing:border-box">
+              <div style="width:100%;display:flex;flex-direction:column;gap:10px;box-sizing:border-box">
+                <div style="font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#7a6f61">Move / Transform</div>
+                <div style="font-size:12px;color:#7a6f61;line-height:1.4">Drag the image to move it. Click the image once to switch the corner handles between resize (↔) and rotate (↻), then drag a handle. Hold Shift while resizing to lock aspect ratio.</div>
+              </div>
+
+              <label style="display:flex;flex-direction:column;gap:4px;width:100%;box-sizing:border-box">
+                <span style="font-size:12px;font-weight:600;color:#7a6f61">Preview Text</span>
+                <input value="{{ stName }}" onChange="{{ onStName }}" placeholder="Preview text" style="padding:9px;border:1px solid #d9cdba;border-radius:7px;font-size:14px;box-sizing:border-box">
+                <span style="font-size:11px;color:#a0958a">Text will not be saved with the icon.</span>
+              </label>
+
+              <div style="width:100%;display:flex;flex-direction:column;gap:10px;box-sizing:border-box;border-top:1px solid #e6dccd;padding-top:12px">
+                <div style="font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#7a6f61">Fill Area</div>
+                <div style="font-size:12px;color:#7a6f61">Drag a box over the area to fill.</div>
+                <div style="display:flex;gap:8px;align-items:center;width:100%">
+                  <input type="color" value="{{ stFillColorHex }}" onChange="{{ stOnFillColorPick }}" style="width:30px;height:30px;padding:0;border:none;background:none;cursor:pointer">
+                  <input type="text" value="{{ stFillColorText }}" onChange="{{ stOnFillColorText }}" placeholder="#ffffff or rgb(255,255,255)" style="flex:1;padding:7px 8px;border:1px solid #d9cdba;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace">
+                </div>
+                <button onClick="{{ stArmFill }}" style="{{ stArmFillStyle }}">{{ stArmFillLabel }}</button>
+              </div>
+
+              <div style="display:flex;gap:8px">
+                <button onClick="{{ stUndo }}" disabled="{{ stUndoDisabled }}" title="Undo (Ctrl+Z)" style="{{ stUndoStyle }}">↶</button>
+                <button onClick="{{ stRedo }}" disabled="{{ stRedoDisabled }}" title="Redo (Ctrl+Y)" style="{{ stRedoStyle }}">↷</button>
+              </div>
+
+              <div style="display:flex;justify-content:flex-end">
+                <button onClick="{{ stSave }}" disabled="{{ stSaveDisabled }}" style="{{ stSaveStyle }}">Save Thumbnail</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </section>
+    </sc-if>
+
     <sc-if value="{{ cropOpen }}" hint-placeholder-val="{{ false }}">
       <div style="position:fixed;inset:0;background:rgba(28,24,20,0.6);display:flex;align-items:center;justify-content:center;z-index:50">
-        <div style="background:#fffdf9;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;align-items:center;width:400px;max-width:calc(100vw - 40px)">
+        <div style="background:#e4ded2;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;align-items:center;width:400px;max-width:calc(100vw - 40px)">
           <div style="font-weight:800;font-size:15px">Edit thumbnail</div>
           <div style="display:flex;gap:6px;width:100%">
             <button onClick="{{ setToolTransform }}" style="{{ transformToolStyle }}">⤢ Transform</button>
@@ -553,7 +637,8 @@ class Component extends DCLogic {
     crop: null,
     refOn: false, refIdx: 0, refView: { scale: 1, offX: 0, offY: 0 }, refDrag: null,
     helpOpen: false, helpDemo: null, coordsOn: true, justCreatedBinId: null, showGhosts: true, dragLevelIdx: null,
-    casePropsOpen: true
+    casePropsOpen: true,
+    stName: '', stCrop: null, stHistory: [], stFuture: []
   };
   PAL = ['#e85d1f', '#2f7fb8', '#5f9440', '#9a5bc9', '#bf8a2a', '#c25577'];
   DEFAULT_ICON = 'data:image/png;base64,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6e///u+l5eVlaXJyUjp16hT99bOf/UwCIF1//fXSU089Jb388stF3/vKK6/Q7yn36wc/+IGUyWSkbDYrLS0tSePj49LMzIwUCASkdDpd9pq/9a1vSQCkD37wg9Lvf/976cyZM5IoivTXl7/8ZQmAdPz4cenf/u3fyv78j3/841I0GpW++MUvlv3M9ddfL62vr0uiKOZdQyaTka699lr6uc7OTum6666TdDod/bNbbrlFOnnyZN6zI7+++tWvlv2ZBoNBevTRR6Xbb79dAiD9+Mc/lv70pz9JL774onT27FkpkUhIoihKr7zyirR//37674aGhqTOzk76//fee68UDAaLnl8qlZJefvnlomuamZnZsXW4608QMt7LaDTioYcewpve9CZ84QtfwGWXXYa9e/fWdILMzs7izW9+M9bW1vDAAw/gLW95C3ieRyQSgc/nw0svvYRPfepT+Ku/+itIkoSbb74ZNpsN7e3tZXcuURTBMAyi0WhRKrOwf4P8/v3vfz/kcjmOHz+OSy+9FOFwGHNzc/j973+Pz3zmM/j85z+P8fFxPP744/jZz36GQ4cOIZlMYnFxEadOncK//Mu/4Pjx4/j2t7+NO++8M68Lked53H777Xj3u9+N4eFhKJVKOujmzJkz+MQnPoEf//jHuOqqq3DTTTfRuYqk/kPc2XvuuQeHDx+mOsaBQAAvvPAC3ve+99HMoNfrRTweR29vLzweD5RKJRYXF3HDDTfA6/XiwQcfxOte9zoEAgFYLBbMz8/jG9/4Bh566CGwLItPf/rTebI+JOtY2NO+k2oyuz4GIS9PFEVcffXVuP/++wEADz30EGZmZvJihc2O3q9+9atYW1vD/fffj3e9613Y2NigfdBqtRpHjhzBQw89BAC48847MTIyQgfal/vupaUlpFIpbGxsUJlMQp4MBoMlEwlerxf/+I//CLfbDa/XC5/PB6PRiJtuugm33norAODxxx/Hww8/jCNHjmBlZQWrq6tQqVR4/etfj/vuu49+ZmxsrKj56t3vfjduvvlmRKNRrK6uQhAE6PV6XHHFFfjwhz8MAHjyySexurqKnp4euN1uyOVyHDt2jKatX//612NjYwOpVApqtRpdXV246aabcMMNN9B7yqX4EPr8N77xDXi9Xtx111246aabkMlk6Gjpffv24d577wUAfOELX8CTTz6ZBwaW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';
@@ -952,6 +1037,16 @@ class Component extends DCLogic {
         if (Array.isArray(cases) && cases.length) this.setState({ data: { cases: cases.map(c => this.repairCase(c)) } });
       }
     } catch (e) {}
+    this._stKeydown = (e) => {
+      if (this.state.tab !== 'thumbeditor') return;
+      const k = e.key.toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); this.stUndo(); }
+      else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); this.stRedo(); }
+    };
+    window.addEventListener('keydown', this._stKeydown);
+  }
+  componentWillUnmount() {
+    if (this._stKeydown) window.removeEventListener('keydown', this._stKeydown);
   }
   repairCase(cs) {
     const bins = (cs.bins || []).map(b => {
@@ -1047,6 +1142,81 @@ class Component extends DCLogic {
     img.src = bin.image || this.DEFAULT_ICON;
   }
   CROP_MARGIN = 70;
+  ST_MARGIN = 90;
+  stLoadImage(src) {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.max(200 / img.width, 200 / img.height);
+      const w = img.width * scale, h = img.height * scale;
+      this.setState({ stCrop: { img, w, h, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: Math.max(20, w * 0.1), dragging: null, tool: 'transform', fills: [], fillColor: '#ffffff', select: null, override: false, text: '' }, stHistory: [], stFuture: [] });
+    };
+    img.onerror = () => this.toast("Couldn't load that image.");
+    img.src = src;
+  }
+  stOnUpload(e) {
+    const file = e.target.files && e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => this.stLoadImage(reader.result);
+    reader.readAsDataURL(file);
+  }
+  stOnDrop(e) {
+    e.preventDefault();
+    const file = e.dataTransfer.files && e.dataTransfer.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => this.stLoadImage(reader.result);
+    reader.readAsDataURL(file);
+  }
+  stApply(newCrop) {
+    const prev = this.state.stCrop;
+    this.setState({ stCrop: newCrop, stHistory: [...this.state.stHistory, prev], stFuture: [] });
+  }
+  stUndo() {
+    const h = this.state.stHistory; if (!h.length) return;
+    const prev = h[h.length - 1];
+    this.setState({ stCrop: prev, stHistory: h.slice(0, -1), stFuture: [this.state.stCrop, ...this.state.stFuture] });
+  }
+  stRedo() {
+    const f = this.state.stFuture; if (!f.length) return;
+    const next = f[0];
+    this.setState({ stCrop: next, stFuture: f.slice(1), stHistory: [...this.state.stHistory, this.state.stCrop] });
+  }
+  stOnHandleDown(corner, e) {
+    e.preventDefault(); e.stopPropagation();
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+    const c = this.state.stCrop; if (!c) return;
+    this._stPre = c;
+    if (c.handleMode === 'rotate') {
+      const rect = this.stCropEl.getBoundingClientRect();
+      const p = { x: e.clientX - rect.left - this.ST_MARGIN, y: e.clientY - rect.top - this.ST_MARGIN };
+      const startAng = Math.atan2(p.y - c.cy, p.x - c.cx) * 180 / Math.PI;
+      this.setState({ stCrop: { ...c, dragging: { type: 'rotate', startAng, startRot: c.rot } } });
+    } else {
+      this.setState({ stCrop: { ...c, dragging: { type: 'resize', corner, startCx: c.cx, startCy: c.cy, startW: c.w, startH: c.h, startRot: c.rot, minW: c.minW || 20 } } });
+    }
+  }
+  async stSave() {
+    const c2 = this.state.stCrop; if (!c2) return;
+    const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
+    const ctx = cv.getContext('2d');
+    ctx.save(); ctx.translate(c2.cx, c2.cy); ctx.rotate(c2.rot * Math.PI / 180);
+    ctx.drawImage(c2.img, -c2.w / 2, -c2.h / 2, c2.w, c2.h);
+    ctx.restore();
+    (c2.fills || []).forEach(f => { ctx.fillStyle = f.color; ctx.fillRect(f.x, f.y, f.w, f.h); });
+    cv.toBlob(async (blob) => {
+      const filename = 'thumbnail.png';
+      if (window.showSaveFilePicker) {
+        try {
+          const handle = await window.showSaveFilePicker({ suggestedName: filename, types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }] });
+          const w = await handle.createWritable(); await w.write(blob); await w.close();
+          this.toast('Thumbnail saved.'); return;
+        } catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      this.toast('Thumbnail saved.');
+    }, 'image/png');
+  }
   rotPt(x, y, deg) {
     const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
     return { x: x * c - y * s, y: x * s + y * c };
@@ -1117,13 +1287,14 @@ class Component extends DCLogic {
     const vals = {
       cases, hasCases: cases.length > 0, noCases: cases.length === 0,
       savedCases, hasSavedCases: savedCases.length > 0, noSavedCases: savedCases.length === 0,
-      navStyles: { builder: nav('builder'), map: nav('map'), search: nav('search'), importexport: nav('importexport'), help: nav('help') },
+      navStyles: { builder: nav('builder'), map: nav('map'), search: nav('search'), importexport: nav('importexport'), help: nav('help'), thumbeditor: nav('thumbeditor') },
       goBuilder: () => this.setState({ tab: 'builder' }),
       goMap: () => this.setState({ tab: 'map' }),
       goSearch: () => this.setState({ tab: 'search' }),
       goImportExport: () => this.setState({ tab: 'importexport' }),
       goHelp: () => this.setState({ tab: 'help' }),
-      showBuilder: st.tab === 'builder', showMap: st.tab === 'map', showSearch: st.tab === 'search', showImportExport: st.tab === 'importexport', showHelp: st.tab === 'help',
+      goThumbEditor: () => this.setState({ tab: 'thumbeditor' }),
+      showBuilder: st.tab === 'builder', showMap: st.tab === 'map', showSearch: st.tab === 'search', showImportExport: st.tab === 'importexport', showHelp: st.tab === 'help', showThumbEditor: st.tab === 'thumbeditor',
       createBlank: () => this.createBlankGuarded(),
       toast: st.toast || '',
       hasBuilderCase: !!cs,
@@ -1409,6 +1580,7 @@ class Component extends DCLogic {
         vals.refViewportRef = (el) => { this.refEl = el; };
         vals.refViewportStyle = { width: '100%', height: '260px', borderRadius: '8px', overflow: 'hidden', position: 'relative', background: '#e9e2d4', touchAction: 'none', cursor: 'grab' };
         vals.refSrc = curRef.src;
+        vals.hasRefSrc = !!curRef.src;
         vals.refImgStyle = { width: '100%', height: 'auto', transform: 'translate(' + rv.offX + 'px,' + rv.offY + 'px) scale(' + rv.scale + ')', transformOrigin: 'top center', display: 'block', pointerEvents: 'none', userSelect: 'none' };
         const FRAME_H = 260;
         const refBounds = (scale) => {
@@ -1442,7 +1614,7 @@ class Component extends DCLogic {
         };
         vals.onRefUp = () => this.setState({ refDrag: null });
       } else {
-        Object.assign(vals, { refViewportRef: () => {}, refViewportStyle: { display: 'none' }, refSrc: '', refImgStyle: {}, onRefWheel: () => {}, onRefDown: () => {}, onRefMove: () => {}, onRefUp: () => {}, zoomIn: () => {}, zoomOut: () => {}, zoomReset: () => {} });
+        Object.assign(vals, { refViewportRef: () => {}, refViewportStyle: { display: 'none' }, refSrc: '', hasRefSrc: false, refImgStyle: {}, onRefWheel: () => {}, onRefDown: () => {}, onRefMove: () => {}, onRefUp: () => {}, zoomIn: () => {}, zoomOut: () => {}, zoomReset: () => {} });
       }
       const si = st.selBinId;
       const selBin = si ? bins.find(b => b.id === si) : null;
@@ -1487,6 +1659,9 @@ class Component extends DCLogic {
           onImgDrop: (e) => { this.setState({ imgDragOver: false }); this.onBinImageDrop(cs, si, e); },
           hasImage: !!selBin.image,
           onEditImage: () => this.openImageEditor(selBin),
+          onImgHoverOn: () => this.setState({ imgBoxHover: true }),
+          onImgHoverOff: () => this.setState({ imgBoxHover: false }),
+          showAddImageHint: !!this.state.imgBoxHover,
           hasThumbText: this.wrapThumbText(selBin.thumbOverride ? selBin.thumbText : selBin.label).length > 0,
           thumbTextLine1: (this.wrapThumbText(selBin.thumbOverride ? selBin.thumbText : selBin.label)[0]) || '',
           thumbTextLine2: (this.wrapThumbText(selBin.thumbOverride ? selBin.thumbText : selBin.label)[1]) || '',
@@ -1540,7 +1715,7 @@ class Component extends DCLogic {
         levelTabs: [], addLevel: () => {}, selHas: false, noSel: true, sel: {}, cfg: {},
         refName: '', onRefUpload: () => {}, refToggleLabel: 'Show reference', refToggleStyle: {}, toggleRefOn: () => {}, refDisabled: true,
         refShow: false, refHasMulti: false, refPrev: () => {}, refNext: () => {},
-        refViewportRef: () => {}, refViewportStyle: { display: 'none' }, refSrc: '', refImgStyle: {}, onRefWheel: () => {}, onRefDown: () => {}, onRefMove: () => {}, onRefUp: () => {}, zoomIn: () => {}, zoomOut: () => {}, zoomReset: () => {},
+        refViewportRef: () => {}, refViewportStyle: { display: 'none' }, refSrc: '', hasRefSrc: false, refImgStyle: {}, onRefWheel: () => {}, onRefDown: () => {}, onRefMove: () => {}, onRefUp: () => {}, zoomIn: () => {}, zoomOut: () => {}, zoomReset: () => {},
         colHeaders: [], rowHeaders: [], colHeaderStyle: {}, rowHeaderStyle: {}, coordsOn: true, onCoordsOn: () => {},
         showGhosts: false, onShowGhosts: () => {}, ghostTiles: []
       });
@@ -1586,7 +1761,7 @@ class Component extends DCLogic {
       vals.cropOuterStyle = { position: 'relative', width: (200 + 2 * this.CROP_MARGIN) + 'px', height: (200 + 2 * this.CROP_MARGIN) + 'px' };
       vals.cropViewportStyle = { position: 'relative', width: '100%', height: '100%', touchAction: 'none', cursor: tool === 'fill' ? 'crosshair' : 'grab' };
       vals.cropMarkerStyle = { position: 'absolute', left: this.CROP_MARGIN + 'px', top: this.CROP_MARGIN + 'px', width: '200px', height: '200px', border: '2px dashed #9a9a9a', borderRadius: '8px', pointerEvents: 'none', boxShadow: '0 0 0 1px #fff' };
-      vals.cropClipStyle = { position: 'absolute', left: this.CROP_MARGIN + 'px', top: this.CROP_MARGIN + 'px', width: '200px', height: '200px', overflow: 'hidden', borderRadius: '8px', background: '#eee' };
+      vals.cropClipStyle = { position: 'absolute', left: this.CROP_MARGIN + 'px', top: this.CROP_MARGIN + 'px', width: '200px', height: '200px', overflow: 'hidden', borderRadius: '8px', background: '#fff' };
       vals.cropWrapStyle = { position: 'absolute', left: crop.cx + 'px', top: crop.cy + 'px', width: '0', height: '0', transform: 'rotate(' + crop.rot + 'deg)' };
       vals.cropImgStyle = { position: 'absolute', left: (-crop.w / 2) + 'px', top: (-crop.h / 2) + 'px', width: crop.w + 'px', height: crop.h + 'px', backgroundImage: 'url(' + crop.img.src + ')', backgroundSize: '100% 100%' };
       const fills = crop.fills || [];
@@ -1691,6 +1866,134 @@ class Component extends DCLogic {
       };
     } else {
       Object.assign(vals, { cropOuterStyle: { display: 'none' }, cropViewportStyle: {}, cropMarkerStyle: {}, cropClipStyle: {}, cropWrapStyle: {}, cropImgStyle: {}, onCropDown: () => {}, onCropMove: () => {}, onCropUp: () => {}, cropCancel: () => {}, cropConfirm: () => {}, isTransformTool: true, isFillTool: false, transformToolStyle: {}, fillToolStyle: {}, setToolTransform: () => {}, setToolFill: () => {}, handles: [], fillRects: [], noFills: true, undoFill: () => {}, fillColorHex: '#ffffff', fillColorText: '#ffffff', onFillColorPick: () => {}, onFillColorText: () => {}, hasSelectRect: false, selectRectStyle: { display: 'none' }, overrideChecked: false, onToggleOverride: () => {}, textValue: '', textDisabled: true, textAreaBg: '#f2ede4', onTextChange: () => {}, resetThumbText: () => {}, hasPreviewText: false, previewTextLine1: '', previewTextLine2: '', previewTextStyle: { display: 'none' } });
+    }
+
+    const st2 = this.state.stCrop;
+    vals.stName = this.state.stName;
+    vals.onStName = (e) => this.setState({ stName: e.target.value });
+    vals.stHasCrop = !!st2; vals.stNoCrop = !st2;
+    vals.stOnUpload = (e) => this.stOnUpload(e);
+    vals.stOnDragOver = (e) => { e.preventDefault(); };
+    vals.stOnDragLeave = () => {};
+    vals.stOnDrop = (e) => this.stOnDrop(e);
+    vals.stUndoDisabled = this.state.stHistory.length === 0;
+    vals.stRedoDisabled = this.state.stFuture.length === 0;
+    vals.stUndo = () => this.stUndo();
+    vals.stRedo = () => this.stRedo();
+    const stBtnBase = { border: '1px solid #d9cdba', background: '#fff', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 };
+    vals.stUndoStyle = { ...stBtnBase, opacity: vals.stUndoDisabled ? 0.4 : 1, cursor: vals.stUndoDisabled ? 'not-allowed' : 'pointer' };
+    vals.stRedoStyle = { ...stBtnBase, opacity: vals.stRedoDisabled ? 0.4 : 1, cursor: vals.stRedoDisabled ? 'not-allowed' : 'pointer' };
+    vals.stSaveDisabled = !st2;
+    vals.stSaveStyle = { border: 'none', borderRadius: '8px', padding: '10px 18px', fontWeight: 700, fontSize: '13px', color: '#fff', background: vals.stSaveDisabled ? '#c9bfae' : '#1c1814', cursor: vals.stSaveDisabled ? 'not-allowed' : 'pointer' };
+    vals.stSave = () => this.stSave();
+    vals.stCropRef = (el) => { this.stCropEl = el; };
+
+    if (st2) {
+      const stTool = st2.tool || 'transform';
+      vals.stIsTransformTool = stTool === 'transform'; vals.stIsFillTool = stTool === 'fill';
+      vals.stArmFillLabel = stTool === 'fill' ? 'Drag on the image to fill…' : 'Draw fill area';
+      vals.stArmFillStyle = { width: '100%', border: '1px solid ' + (stTool === 'fill' ? '#e85d1f' : '#d9cdba'), background: stTool === 'fill' ? '#e85d1f' : '#fff', color: stTool === 'fill' ? '#fff' : '#1c1814', borderRadius: '6px', padding: '7px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' };
+      vals.stArmFill = () => this.setState({ stCrop: { ...st2, tool: stTool === 'fill' ? 'transform' : 'fill', dragging: null, select: null } });
+      const stLines = this.wrapThumbText(this.state.stName || 'Preview text');
+      vals.stHasPreviewText = stLines.length > 0;
+      vals.stPreviewTextLine1 = stLines[0] || ''; vals.stPreviewTextLine2 = stLines[1] || '';
+      vals.stPreviewTextStyle = { position: 'absolute', bottom: '8px', right: '12px', left: '12px', textAlign: 'right', color: '#000', fontFamily: "'Roboto Condensed',sans-serif", fontWeight: 700, fontSize: '26px', lineHeight: '1.25', textShadow: '0 0 3px #fff, 0 0 3px #fff', pointerEvents: 'none', overflow: 'hidden' };
+      const M2 = this.ST_MARGIN;
+      vals.stOuterStyle = { position: 'relative', width: (200 + 2 * M2) + 'px', height: (200 + 2 * M2) + 'px' };
+      vals.stViewportStyle = { position: 'relative', width: '100%', height: '100%', touchAction: 'none', cursor: stTool === 'fill' ? 'crosshair' : 'grab' };
+      vals.stMarkerStyle = { position: 'absolute', left: M2 + 'px', top: M2 + 'px', width: '200px', height: '200px', border: '2px dashed #9a9a9a', borderRadius: '8px', pointerEvents: 'none', boxShadow: '0 0 0 1px #fff' };
+      vals.stClipStyle = { position: 'absolute', left: M2 + 'px', top: M2 + 'px', width: '200px', height: '200px', overflow: 'hidden', borderRadius: '8px', background: '#fff' };
+      vals.stWrapStyle = { position: 'absolute', left: st2.cx + 'px', top: st2.cy + 'px', width: '0', height: '0', transform: 'rotate(' + st2.rot + 'deg)' };
+      vals.stImgStyle = { position: 'absolute', left: (-st2.w / 2) + 'px', top: (-st2.h / 2) + 'px', width: st2.w + 'px', height: st2.h + 'px', backgroundImage: 'url(' + st2.img.src + ')', backgroundSize: '100% 100%' };
+      const stFills = st2.fills || [];
+      vals.stFillRects = stFills.map(f => ({ style: { position: 'absolute', left: f.x + 'px', top: f.y + 'px', width: f.w + 'px', height: f.h + 'px', background: f.color, pointerEvents: 'none' } }));
+      vals.stNoFills = stFills.length === 0;
+      vals.stUndoFill = () => this.stApply({ ...st2, fills: stFills.slice(0, -1) });
+      vals.stFillColorHex = /^#[0-9a-f]{6}$/i.test(st2.fillColor) ? st2.fillColor : '#ffffff';
+      vals.stFillColorText = st2.fillColor || '#ffffff';
+      vals.stOnFillColorPick = (e) => this.setState({ stCrop: { ...st2, fillColor: e.target.value } });
+      vals.stOnFillColorText = (e) => { const v = e.target.value; if (this.validColor(v)) this.setState({ stCrop: { ...st2, fillColor: v } }); };
+      vals.stHasSelectRect = !!st2.select;
+      if (st2.select) {
+        const s = st2.select;
+        const x = Math.min(s.x0, s.x), y = Math.min(s.y0, s.y), w = Math.abs(s.x - s.x0), h = Math.abs(s.y - s.y0);
+        vals.stSelectRectStyle = { position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', background: 'rgba(232,93,31,0.25)', border: '1px dashed #e85d1f', pointerEvents: 'none' };
+      } else vals.stSelectRectStyle = { display: 'none' };
+      const STSIGNS = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+      const stToViewport = (e) => { const r = this.stCropEl.getBoundingClientRect(); return { x: e.clientX - r.left - M2, y: e.clientY - r.top - M2 }; };
+      const stToLocalClamped = (e) => { const p = stToViewport(e); return { x: Math.min(200, Math.max(0, p.x)), y: Math.min(200, Math.max(0, p.y)) }; };
+      vals.stHandles = st2.handleMode === 'rotate'
+        ? STSIGNS.map((s, i) => ({ icon: '↻', title: 'Drag to rotate', style: { position: 'absolute', left: (M2 + st2.cx + this.rotPt(s[0] * st2.w / 2, s[1] * st2.h / 2, st2.rot).x - 11) + 'px', top: (M2 + st2.cy + this.rotPt(s[0] * st2.w / 2, s[1] * st2.h / 2, st2.rot).y - 11) + 'px', width: '22px', height: '22px', borderRadius: '50%', background: '#fff', border: '2px solid #2f7fb8', color: '#2f7fb8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', cursor: 'grab', userSelect: 'none' }, onDown: (e) => this.stOnHandleDown(i, e) }))
+        : STSIGNS.map((s, i) => ({ icon: '', title: 'Drag to resize', style: { position: 'absolute', left: (M2 + st2.cx + this.rotPt(s[0] * st2.w / 2, s[1] * st2.h / 2, st2.rot).x - 7) + 'px', top: (M2 + st2.cy + this.rotPt(s[0] * st2.w / 2, s[1] * st2.h / 2, st2.rot).y - 7) + 'px', width: '14px', height: '14px', borderRadius: '3px', background: '#fff', border: '2px solid #e85d1f', cursor: (i % 2 === 0 ? 'nwse-resize' : 'nesw-resize') }, onDown: (e) => this.stOnHandleDown(i, e) }));
+      vals.stOnCropDown = (e) => {
+        e.preventDefault();
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+        this._stPre = st2;
+        if (stTool === 'fill') {
+          const p = stToLocalClamped(e);
+          this.setState({ stCrop: { ...st2, select: { x0: p.x, y0: p.y, x: p.x, y: p.y } } });
+        } else {
+          this.setState({ stCrop: { ...st2, dragging: { type: 'move', startX: e.clientX, startY: e.clientY, startCx: st2.cx, startCy: st2.cy, moved: false } } });
+        }
+      };
+      vals.stOnCropMove = (e) => {
+        const c2 = this.state.stCrop; if (!c2) return;
+        if ((c2.tool || 'transform') === 'fill') {
+          if (!c2.select) return;
+          const p = stToLocalClamped(e);
+          this.setState({ stCrop: { ...c2, select: { ...c2.select, x: p.x, y: p.y } } });
+          return;
+        }
+        const d = c2.dragging; if (!d) return;
+        if (d.type === 'move') {
+          const dx = e.clientX - d.startX, dy = e.clientY - d.startY;
+          const moved = d.moved || Math.abs(dx) > 4 || Math.abs(dy) > 4;
+          this.setState({ stCrop: { ...c2, cx: d.startCx + dx, cy: d.startCy + dy, dragging: { ...d, moved } } });
+        } else if (d.type === 'resize') {
+          const p = stToViewport(e);
+          const deltaWorld = { x: p.x - d.startCx, y: p.y - d.startCy };
+          const local = this.rotPt(deltaWorld.x, deltaWorld.y, -d.startRot);
+          const s = STSIGNS[d.corner];
+          let rawW = Math.max(d.minW, s[0] * local.x), rawH = Math.max(d.minW, s[1] * local.y);
+          if (e.shiftKey) { const sc = Math.max(rawW / d.startW, rawH / d.startH); rawW = d.startW * sc; rawH = d.startH * sc; }
+          const anchor = { x: -s[0] * d.startW / 2, y: -s[1] * d.startH / 2 };
+          const dragged = { x: anchor.x + s[0] * rawW, y: anchor.y + s[1] * rawH };
+          const centerLocalOff = { x: (anchor.x + dragged.x) / 2, y: (anchor.y + dragged.y) / 2 };
+          const centerWorldOff = this.rotPt(centerLocalOff.x, centerLocalOff.y, d.startRot);
+          this.setState({ stCrop: { ...c2, w: rawW, h: rawH, cx: d.startCx + centerWorldOff.x, cy: d.startCy + centerWorldOff.y } });
+        } else if (d.type === 'rotate') {
+          const p = stToViewport(e);
+          const ang = Math.atan2(p.y - c2.cy, p.x - c2.cx) * 180 / Math.PI;
+          this.setState({ stCrop: { ...c2, rot: d.startRot + (ang - d.startAng) } });
+        }
+      };
+      vals.stOnCropUp = () => {
+        const c2 = this.state.stCrop; if (!c2) return;
+        const pre = this._stPre || c2; this._stPre = null;
+        if ((c2.tool || 'transform') === 'fill' && c2.select) {
+          const s = c2.select;
+          const x = Math.min(s.x0, s.x), y = Math.min(s.y0, s.y), w = Math.abs(s.x - s.x0), h = Math.abs(s.y - s.y0);
+          if (w > 3 && h > 3) {
+            const fills = (c2.fills || []).concat([{ x, y, w, h, color: c2.fillColor || '#ffffff' }]);
+            this.setState({ stCrop: { ...c2, select: null, fills, tool: 'transform' }, stHistory: [...this.state.stHistory, pre], stFuture: [] });
+          } else {
+            this.setState({ stCrop: { ...c2, select: null } });
+          }
+          return;
+        }
+        const d = c2.dragging;
+        if (d && d.type === 'move' && !d.moved) {
+          this.setState({ stCrop: { ...c2, dragging: null, handleMode: c2.handleMode === 'rotate' ? 'resize' : 'rotate' } });
+          return;
+        }
+        if (d) {
+          this.setState({ stCrop: { ...c2, dragging: null }, stHistory: [...this.state.stHistory, pre], stFuture: [] });
+        } else {
+          this.setState({ stCrop: { ...c2, dragging: null } });
+        }
+      };
+    } else {
+      Object.assign(vals, { stIsTransformTool: true, stIsFillTool: false, stArmFillLabel: 'Draw fill area', stArmFillStyle: {}, stArmFill: () => {}, stHasPreviewText: false, stPreviewTextLine1: '', stPreviewTextLine2: '', stPreviewTextStyle: { display: 'none' }, stOuterStyle: { display: 'none' }, stViewportStyle: {}, stMarkerStyle: {}, stClipStyle: {}, stWrapStyle: {}, stImgStyle: {}, stFillRects: [], stNoFills: true, stUndoFill: () => {}, stFillColorHex: '#ffffff', stFillColorText: '#ffffff', stOnFillColorPick: () => {}, stOnFillColorText: () => {}, stHasSelectRect: false, stSelectRectStyle: { display: 'none' }, stHandles: [], stOnCropDown: () => {}, stOnCropMove: () => {}, stOnCropUp: () => {} });
     }
     return vals;
   }
