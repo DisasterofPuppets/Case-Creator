@@ -25,7 +25,8 @@ input,select,button,textarea{font-family:inherit}
 @keyframes demoResizeTile{0%{width:60px;height:60px}55%,100%{width:90px;height:90px}}
 @keyframes demoDeleteTile{0%{opacity:1;transform:scale(1)}45%,100%{opacity:0;transform:scale(0.4)}}
 @keyframes demoDeleteCursor{0%{opacity:1;transform:scale(1)}45%,100%{opacity:0;transform:scale(1.6)}}
-@keyframes ccFlashColor{0%,49%{background:var(--fc)}50%,57%{background:#f5c518}58%,64%{background:var(--fc)}65%,72%{background:#f5c518}73%,79%{background:var(--fc)}80%,87%{background:#f5c518}88%,100%{background:var(--fc)}}
+@keyframes ccFlashColor{0%,19%{background:var(--fc)}20%,27%{background:#f5c518}28%,34%{background:var(--fc)}35%,42%{background:#f5c518}43%,49%{background:var(--fc)}50%,57%{background:#f5c518}58%,100%{background:var(--fc)}}
+@keyframes ccHeaderFlash{0%,19%{background:#f5c518;color:#1c1814}20%,27%{background:#1c1814;color:#fff}28%,100%{background:#f5c518;color:#1c1814}}
 </style>
 </helmet>
 <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
@@ -430,60 +431,54 @@ input,select,button,textarea{font-family:inherit}
       <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Where is my… (e.g. relay, XT60, heat shrink)" style="padding:15px 16px;border:1px solid #d9cdba;border-radius:10px;font-size:16px;background:#fff" style-focus="border-color:#e85d1f;outline:none">
       <div style="display:flex;flex-direction:column;gap:8px">
         <sc-for list="{{ searchResults }}" as="s" hint-placeholder-count="0">
-          <div onClick="{{ s.go }}" onMouseEnter="{{ s.onHoverOn }}" onMouseLeave="{{ s.onHoverOff }}" style="display:flex;align-items:flex-start;gap:16px;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:14px 16px;cursor:pointer" style-hover="border-color:#e85d1f">
-            <div style="position:relative;width:200px;height:200px;flexShrink:0;borderRadius:6px;overflow:hidden">
-              <div style="{{ s.thumb.imgStyle }}"></div>
-              <sc-if value="{{ s.thumb.hasText }}" hint-placeholder-val="{{ false }}">
-                <div style="{{ s.thumb.textStyle }}">{{ s.thumb.line1 }}<br>{{ s.thumb.line2 }}</div>
-              </sc-if>
-            </div>
-            <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;padding-top:2px">
-              <div style="font-weight:700;font-size:16px">{{ s.name }}</div>
-              <div style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="{{ s.dot }}"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7a6f61">{{ s.loc }}</span></div>
-              <div style="display:grid;grid-template-columns:16px 1fr;grid-template-rows:16px auto;gap:2px;width:fit-content">
-                <div></div>
-                <div style="{{ s.grid.colHeaderStyle }}">
-                  <sc-for list="{{ s.grid.colHeaders }}" as="ch" hint-placeholder-count="0">
-                    <div style="text-align:center;font-size:9px;font-weight:800;color:#fff;background:#1c1814;border-radius:2px;font-family:'IBM Plex Mono',monospace">{{ ch }}</div>
-                  </sc-for>
-                </div>
-                <div style="{{ s.grid.rowHeaderStyle }}">
-                  <sc-for list="{{ s.grid.rowHeaders }}" as="rh" hint-placeholder-count="0">
-                    <div style="display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;background:#1c1814;border-radius:2px;font-family:'IBM Plex Mono',monospace">{{ rh }}</div>
-                  </sc-for>
-                </div>
-                <div style="{{ s.grid.gridStyle }}">
-                  <sc-for list="{{ s.grid.cells }}" as="cell" hint-placeholder-count="0">
-                    <div style="{{ cell.style }}"></div>
-                  </sc-for>
+          <div onClick="{{ s.go }}" onMouseEnter="{{ s.onHoverOn }}" onMouseLeave="{{ s.onHoverOff }}" style="display:flex;flex-direction:column;gap:12px;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:14px 16px;cursor:pointer" style-hover="border-color:#e85d1f">
+            <div style="font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;gap:6px">Part: {{ s.name }} - Case: {{ s.caseName }} - Location <span style="{{ s.layerColorDot }}"></span> {{ s.posLabel }}</div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <div style="position:relative;width:200px;height:200px;flexShrink:0;overflow:hidden">
+                <div style="{{ s.thumb.imgStyle }}"></div>
+                <sc-if value="{{ s.thumb.hasText }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ s.thumb.textStyle }}">{{ s.thumb.line1 }}<br>{{ s.thumb.line2 }}</div>
+                </sc-if>
+              </div>
+              <div style="flex:1;display:flex;align-items:center;justify-content:center;height:200px;min-width:0">
+                <div style="display:grid;grid-template-columns:16px 1fr;grid-template-rows:16px auto;gap:2px">
+                  <div></div>
+                  <div style="{{ s.grid.colHeaderStyle }}">
+                    <sc-for list="{{ s.grid.colHeaders }}" as="ch" hint-placeholder-count="0">
+                      <div style="{{ ch.style }}">{{ ch.label }}</div>
+                    </sc-for>
+                  </div>
+                  <div style="{{ s.grid.rowHeaderStyle }}">
+                    <sc-for list="{{ s.grid.rowHeaders }}" as="rh" hint-placeholder-count="0">
+                      <div style="{{ rh.style }}">{{ rh.label }}</div>
+                    </sc-for>
+                  </div>
+                  <div style="{{ s.grid.gridStyle }}">
+                    <sc-for list="{{ s.grid.cells }}" as="cell" hint-placeholder-count="0">
+                      <div style="{{ cell.style }}"></div>
+                    </sc-for>
+                  </div>
                 </div>
               </div>
-            </div>
-            <sc-if value="{{ s.show3d }}" hint-placeholder-val="{{ false }}">
-              <div style="width:200px;flexShrink:0;display:flex;flex-direction:column;gap:6px">
-                <div style="font-size:11px;color:#7a6f61;font-family:'IBM Plex Mono',monospace;line-height:1.3">{{ s.threeD.label }}</div>
-                <div style="position:relative;height:190px;perspective:700px">
+              <sc-if value="{{ s.show3d }}" hint-placeholder-val="{{ false }}">
+                <div style="width:200px;height:200px;flexShrink:0;position:relative;perspective:700px;paddingRight:10px;boxSizing:content-box">
                   <div style="{{ s.threeD.outerStyle }}">
                     <div style="{{ s.threeD.worldStyle }}">
-                      <sc-for list="{{ s.threeD.planes }}" as="pl" hint-placeholder-count="0">
-                        <div style="{{ pl.style }}">
-                          <sc-for list="{{ pl.emptyCells }}" as="ec" hint-placeholder-count="0">
-                            <div style="{{ ec.style }}"></div>
-                          </sc-for>
-                          <sc-for list="{{ pl.boxes }}" as="bx" hint-placeholder-count="0">
-                            <div style="{{ bx.wrapStyle }}">
-                              <div style="{{ bx.frontStyle }}"></div>
-                              <div style="{{ bx.rightStyle }}"></div>
-                              <div style="{{ bx.topStyle }}"></div>
-                            </div>
-                          </sc-for>
+                      <sc-for list="{{ s.threeD.emptyCells }}" as="ec" hint-placeholder-count="0">
+                        <div style="{{ ec.style }}"></div>
+                      </sc-for>
+                      <sc-for list="{{ s.threeD.boxes }}" as="bx" hint-placeholder-count="0">
+                        <div style="{{ bx.wrapStyle }}">
+                          <div style="{{ bx.frontStyle }}"></div>
+                          <div style="{{ bx.rightStyle }}"></div>
+                          <div style="{{ bx.topStyle }}"></div>
                         </div>
                       </sc-for>
                     </div>
                   </div>
                 </div>
-              </div>
-            </sc-if>
+              </sc-if>
+            </div>
           </div>
         </sc-for>
       </div>
@@ -766,37 +761,40 @@ class Component extends DCLogic {
     const planeW = cols * CELL + (cols - 1) * GAP, planeH = rows * CELL + (rows - 1) * GAP;
     const overlaps = (b, row, col, rowSpan, colSpan) => b.row < row + rowSpan && b.row + (b.rowSpan || 1) > row && b.col < col + colSpan && b.col + (b.colSpan || 1) > col;
     const covers = (b, r, col) => r >= b.row && r < b.row + (b.rowSpan || 1) && col >= b.col && col < b.col + (b.colSpan || 1);
-    const planes = [];
+    const px = (col) => (col - 1) * (CELL + GAP);
+    const emptyCells = [];
+    const boxes = [];
     for (let li = 0; li < N; li++) {
-      const emptyCells = [];
+      const levelZ = (N - 1 - li) * LEVELGAP;
       const levelBins = c.bins.filter(bn => (bn.levels || []).includes(li));
       for (let r = 1; r <= rows; r++) for (let col = 1; col <= cols; col++) {
-        if (!levelBins.some(bn => covers(bn, r, col))) emptyCells.push({ style: { gridArea: r + ' / ' + col, background: 'transparent', border: '1px dotted rgba(0,0,0,0.22)' } });
+        if (!levelBins.some(bn => covers(bn, r, col))) {
+          emptyCells.push({ style: { position: 'absolute', left: px(col) + 'px', top: px(r) + 'px', width: CELL + 'px', height: CELL + 'px', background: 'transparent', border: '1px dotted rgba(0,0,0,0.22)', transform: 'translateZ(' + levelZ + 'px)' } });
+        }
       }
-      const boxes = levelBins.map(bn => {
+      levelBins.forEach(bn => {
         const rowSpan = bn.rowSpan || 1, colSpan = bn.colSpan || 1;
         const w = colSpan * CELL + (colSpan - 1) * GAP, h = rowSpan * CELL + (rowSpan - 1) * GAP;
         const isTargetBox = bn.id === targetBin.id && li === minLvl;
         const isBlocker = li < minLvl && overlaps(bn, targetBin.row, targetBin.col, targetBin.rowSpan || 1, targetBin.colSpan || 1);
         const color = this.levelColor(c, li);
-        const shift = hovered && isBlocker ? 'translateZ(40px)' : (hovered && isTargetBox ? 'translateZ(' + (LEVELGAP + 16) + 'px)' : 'translateZ(0)');
+        const extraZ = hovered && isBlocker ? 40 : (hovered && isTargetBox ? (LEVELGAP + 16) : 0);
         const scale = isTargetBox && hovered ? ' scale(1.06)' : '';
         const glow = isTargetBox && hovered ? 'ccFlashColor 2s steps(1) infinite' : 'none';
-        return {
-          wrapStyle: { gridArea: bn.row + ' / ' + bn.col + ' / span ' + rowSpan + ' / span ' + colSpan, position: 'relative', transformStyle: 'preserve-3d', transform: shift + scale, transition: 'transform 0.4s ease' },
-          frontStyle: { position: 'absolute', left: '0', top: h + 'px', width: w + 'px', height: WALLH + 'px', background: this.darkenColor(color, 55), transformOrigin: 'top', transform: 'rotateX(90deg)', '--fc': this.darkenColor(color, 55), animation: glow },
-          rightStyle: { position: 'absolute', left: w + 'px', top: '0', width: WALLH + 'px', height: h + 'px', background: this.darkenColor(color, 30), transformOrigin: 'left', transform: 'rotateY(-90deg)', '--fc': this.darkenColor(color, 30), animation: glow },
-          topStyle: { position: 'absolute', left: '0', top: '0', width: w + 'px', height: h + 'px', background: color, boxShadow: '0 1px 2px rgba(0,0,0,0.2)', transform: 'translateZ(' + WALLH + 'px)', '--fc': color, animation: glow }
-        };
+        boxes.push({
+          wrapStyle: { position: 'absolute', left: px(bn.col) + 'px', top: px(bn.row) + 'px', width: w + 'px', height: h + 'px', transformStyle: 'preserve-3d', transform: 'translateZ(' + (levelZ + extraZ) + 'px)' + scale, transition: 'transform 0.4s ease' },
+          frontStyle: { position: 'absolute', left: '0', top: h + 'px', width: w + 'px', height: WALLH + 'px', background: 'linear-gradient(to bottom, ' + this.lightenColor(color, 2) + ' 0, ' + this.lightenColor(color, 2) + ' 2px, ' + this.darkenColor(color, 55) + ' 2px)', transformOrigin: 'top', transform: 'rotateX(90deg)', '--fc': this.darkenColor(color, 55), animation: glow },
+          rightStyle: { position: 'absolute', left: w + 'px', top: '0', width: WALLH + 'px', height: h + 'px', background: 'linear-gradient(to bottom, ' + this.lightenColor(color, 1) + ' 0, ' + this.lightenColor(color, 1) + ' 2px, ' + this.darkenColor(color, 30) + ' 2px)', transformOrigin: 'left', transform: 'rotateY(-90deg)', '--fc': this.darkenColor(color, 30), animation: glow },
+          topStyle: { position: 'absolute', left: '0', top: '0', width: w + 'px', height: h + 'px', background: color, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.15)', transform: 'translateZ(' + WALLH + 'px)', '--fc': color, animation: glow }
+        });
       });
-      planes.push({ style: { position: 'absolute', inset: '0', display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',' + CELL + 'px)', gridTemplateRows: 'repeat(' + rows + ',' + CELL + 'px)', gap: GAP + 'px', transformStyle: 'preserve-3d', transform: 'translateZ(' + ((N - 1 - li) * LEVELGAP) + 'px)' }, emptyCells, boxes });
     }
     const naturalW = (planeW + planeH) * 0.72, naturalH = (planeW + planeH) * 0.42 + (WALLH + 70);
-    const fitScale = Math.min(1, 190 / naturalW, 170 / naturalH);
+    const fitScale = Math.min(215 / naturalW, 205 / naturalH);
     return {
-      outerStyle: { position: 'absolute', left: '50%', top: '50%', width: planeW + 'px', height: planeH + 'px', transform: 'translate(-50%,-50%) scale(' + fitScale + ')', transformOrigin: 'center' },
+      outerStyle: { position: 'absolute', left: '50%', top: '50%', width: planeW + 'px', height: planeH + 'px', transform: 'translate(-50%,-50%) translateY(6px) scale(' + fitScale + ')', transformOrigin: 'center' },
       worldStyle: { width: '100%', height: '100%', position: 'relative', transformStyle: 'preserve-3d', transform: 'rotateX(55deg) rotateZ(45deg)' },
-      planes
+      emptyCells, boxes
     };
   }
   gridStyles(rows, cols, interactive, cs, coordsOn) {
@@ -1833,30 +1831,42 @@ class Component extends DCLogic {
       const levelName = (c.levels[maxLvl] || {}).name || ('Level ' + (maxLvl + 1));
       const lines = this.wrapThumbText(b.thumbOverride ? b.thumbText : b.label);
       const thumb = {
-        imgStyle: { width: '100%', height: '100%', backgroundImage: 'url(' + (b.image || this.DEFAULT_ICON) + ')', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '6px', border: '1px solid #d9cdba' },
-        hasText: lines.length > 0, line1: lines[0] || '', line2: lines[1] || '',
+        imgStyle: { width: '100%', height: '100%', backgroundImage: 'url(' + (b.image || this.DEFAULT_ICON) + ')', backgroundSize: 'cover', backgroundPosition: 'center' },
+        hasText: false, line1: lines[0] || '', line2: lines[1] || '',
         textStyle: { position: 'absolute', bottom: '6px', right: '8px', left: '8px', textAlign: 'right', color: '#000', fontFamily: "'Roboto Condensed',sans-serif", fontWeight: 700, fontSize: '18px', lineHeight: '1.2', textShadow: '0 0 4px #fff, 0 0 4px #fff', pointerEvents: 'none', overflow: 'hidden' }
       };
       const rows = c.rows, cols = c.cols;
       const inCell = (r, col) => r >= b.row && r < b.row + (b.rowSpan || 1) && col >= b.col && col < b.col + (b.colSpan || 1);
       const cells = [];
       for (let r = 1; r <= rows; r++) for (let col = 1; col <= cols; col++) cells.push({ style: { gridArea: r + ' / ' + col, border: '1px solid #e6dccd', borderRadius: '2px', background: inCell(r, col) ? this.levelColor(c, minLvl) : '#fff' } });
+      const targetColIdx = b.col - 1, targetRowIdx = b.row - 1;
+      const hoveredNow = hoverIdx === i;
+      const headerStyle = (isTarget, isRow) => ({
+        textAlign: 'center', fontSize: '11px', fontWeight: 800, borderRadius: '2px', fontFamily: "'IBM Plex Mono',monospace",
+        background: isTarget ? '#f5c518' : '#1c1814', color: isTarget ? '#1c1814' : '#fff',
+        display: isRow ? 'flex' : undefined, alignItems: isRow ? 'center' : undefined, justifyContent: isRow ? 'center' : undefined
+      });
+      const cellSize = Math.max(12, Math.min(22, Math.floor((130 - (rows - 1) * 2) / rows)));
       const grid = {
-        colHeaders: Array.from({ length: cols }, (_, k) => this.seqLabel(c.hIndex, k, cols)),
-        rowHeaders: Array.from({ length: rows }, (_, k) => this.seqLabel(c.vIndex, k, rows)),
-        colHeaderStyle: { display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',14px)', gap: '2px' },
-        rowHeaderStyle: { display: 'grid', gridTemplateRows: 'repeat(' + rows + ',14px)', gap: '2px' },
-        gridStyle: { display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',14px)', gridTemplateRows: 'repeat(' + rows + ',14px)', gap: '2px' },
+        colHeaders: Array.from({ length: cols }, (_, k) => ({ label: this.seqLabel(c.hIndex, k, cols), style: headerStyle(k === targetColIdx, false) })),
+        rowHeaders: Array.from({ length: rows }, (_, k) => ({ label: this.seqLabel(c.vIndex, k, rows), style: headerStyle(k === targetRowIdx, true) })),
+        colHeaderStyle: { display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',' + cellSize + 'px)', gap: '2px' },
+        rowHeaderStyle: { display: 'grid', gridTemplateRows: 'repeat(' + rows + ',' + cellSize + 'px)', gap: '2px' },
+        gridStyle: { display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',' + cellSize + 'px)', gridTemplateRows: 'repeat(' + rows + ',' + cellSize + 'px)', gap: '2px' },
         cells
       };
       const show3d = true;
       let threeD = null;
       if (show3d) {
         threeD = this.buildCaseScene(c, b, hoverIdx === i, minLvl);
-        threeD.label = c.name + ' · ' + levelName + ' · ' + this.posLabel(c, b);
+        threeD.label = 'Layer : ' + levelName + ' - Position: ' + this.posLabel(c, b);
       }
       return {
         name: b.label || 'Unlabeled',
+        caseName: c.name,
+        layerName: levelName,
+        layerColorDot: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(c, minLvl), display: 'inline-block', flexShrink: 0 },
+        posLabel: this.posLabel(c, b),
         loc: c.name + ' · ' + b.levels.map(k => (c.levels[k] || {}).name).join(',') + ' · ' + this.posLabel(c, b),
         dot: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(c, b.levels[0] || 0), display: 'inline-block', flexShrink: 0 },
         thumb, grid, show3d, threeD,
