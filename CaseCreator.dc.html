@@ -289,9 +289,6 @@ input,select,button,textarea{font-family:inherit}
                   <label style="{{ sel.imgBoxStyle }}" style-hover="border-color:#e85d1f" onDragOver="{{ sel.onImgDragOver }}" onDragLeave="{{ sel.onImgDragLeave }}" onDrop="{{ sel.onImgDrop }}">
                     <input type="file" accept="image/*" onChange="{{ sel.onImage }}" style="display:none">
                   </label>
-                  <sc-if value="{{ sel.hasThumbText }}" hint-placeholder-val="{{ false }}">
-                    <div style="{{ sel.thumbTextStyle }}">{{ sel.thumbTextLine1 }}<br>{{ sel.thumbTextLine2 }}</div>
-                  </sc-if>
                   <sc-if value="{{ sel.showAddImageHint }}" hint-placeholder-val="{{ false }}">
                     <div style="position:absolute;inset:0;border-radius:4px;background:rgba(28,24,20,0.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;pointer-events:none">Add Image</div>
                   </sc-if>
@@ -432,13 +429,10 @@ input,select,button,textarea{font-family:inherit}
       <div style="display:flex;flex-direction:column;gap:8px">
         <sc-for list="{{ searchResults }}" as="s" hint-placeholder-count="0">
           <div onClick="{{ s.go }}" onMouseEnter="{{ s.onHoverOn }}" onMouseLeave="{{ s.onHoverOff }}" style="display:flex;flex-direction:column;gap:12px;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:14px 16px;cursor:pointer" style-hover="border-color:#e85d1f">
-            <div style="font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;gap:6px">Part: {{ s.name }} - Case: {{ s.caseName }} - Location <span style="{{ s.layerColorDot }}"></span> {{ s.posLabel }}</div>
+            <div style="font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;gap:6px">Part: {{ s.name }} - Case: {{ s.caseName }} - Location - Level: {{ s.layerName }} - <span style="{{ s.layerColorDot }}"></span> {{ s.posLabel }}</div>
             <div style="display:flex;align-items:center;gap:16px">
               <div style="position:relative;width:200px;height:200px;flexShrink:0;overflow:hidden">
                 <div style="{{ s.thumb.imgStyle }}"></div>
-                <sc-if value="{{ s.thumb.hasText }}" hint-placeholder-val="{{ false }}">
-                  <div style="{{ s.thumb.textStyle }}">{{ s.thumb.line1 }}<br>{{ s.thumb.line2 }}</div>
-                </sc-if>
               </div>
               <div style="flex:1;display:flex;align-items:center;justify-content:center;height:200px;min-width:0">
                 <div style="display:grid;grid-template-columns:16px 1fr;grid-template-rows:16px auto;gap:2px">
@@ -558,9 +552,6 @@ input,select,button,textarea{font-family:inherit}
                     <sc-if value="{{ stHasSelectRect }}" hint-placeholder-val="{{ false }}">
                       <div style="{{ stSelectRectStyle }}"></div>
                     </sc-if>
-                    <sc-if value="{{ stHasPreviewText }}" hint-placeholder-val="{{ false }}">
-                      <div style="{{ stPreviewTextStyle }}">{{ stPreviewTextLine1 }}<br>{{ stPreviewTextLine2 }}</div>
-                    </sc-if>
                   </div>
                   <div style="{{ stMarkerStyle }}"></div>
                   <sc-if value="{{ stIsTransformTool }}" hint-placeholder-val="{{ true }}">
@@ -628,28 +619,19 @@ input,select,button,textarea{font-family:inherit}
             </div>
             <button onClick="{{ undoFill }}" disabled="{{ noFills }}" style="width:100%;border:1px solid #d9cdba;background:#fff;border-radius:6px;padding:7px;font-size:12px;font-weight:600;cursor:pointer">Undo last fill</button>
           </sc-if>
-          <div style="display:flex;flex-direction:column;gap:8px;width:100%">
-            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer">
-              <input type="checkbox" checked="{{ overrideChecked }}" onChange="{{ onToggleOverride }}">Override
-            </label>
-            <textarea value="{{ textValue }}" onChange="{{ onTextChange }}" disabled="{{ textDisabled }}" rows="2" maxlength="82" placeholder="Text shown on the thumbnail" style="padding:8px;border:1px solid #d9cdba;border-radius:6px;font-size:13px;font-family:'Roboto Condensed',sans-serif;font-weight:700;resize:vertical;background:{{ textAreaBg }}"></textarea>
-            <div style="font-size:10px;color:#a0958a">Max 2 lines, 40 characters each. Clearing the text hides it.</div>
-            <button onClick="{{ resetThumbText }}" style="width:100%;border:1px solid #d9cdba;background:#fff;border-radius:6px;padding:7px;font-size:12px;font-weight:600;cursor:pointer">Reset default text</button>
-          </div>
           <div style="{{ cropOuterStyle }}">
             <div style="{{ cropViewportStyle }}" ref="{{ cropRef }}" onPointerDown="{{ onCropDown }}" onPointerMove="{{ onCropMove }}" onPointerUp="{{ onCropUp }}" onPointerCancel="{{ onCropUp }}">
               <div style="{{ cropClipStyle }}">
                 <div style="{{ cropWrapStyle }}">
                   <div style="{{ cropImgStyle }}"></div>
                 </div>
+                <div style="{{ cropCrosshairHStyle }}"></div>
+                <div style="{{ cropCrosshairVStyle }}"></div>
                 <sc-for list="{{ fillRects }}" as="fr" hint-placeholder-count="0">
                   <div style="{{ fr.style }}"></div>
                 </sc-for>
                 <sc-if value="{{ hasSelectRect }}" hint-placeholder-val="{{ false }}">
                   <div style="{{ selectRectStyle }}"></div>
-                </sc-if>
-                <sc-if value="{{ hasPreviewText }}" hint-placeholder-val="{{ false }}">
-                  <div style="{{ previewTextStyle }}">{{ previewTextLine1 }}<br>{{ previewTextLine2 }}</div>
                 </sc-if>
               </div>
               <div style="{{ cropMarkerStyle }}"></div>
@@ -779,7 +761,7 @@ class Component extends DCLogic {
         const binTopLvl = Math.min(...(bn.levels || [li]));
         const trueColor = this.levelColor(c, binTopLvl);
         const color = hovered && isXray ? '#f2f2f0' : trueColor;
-        const opacity = hovered && isXray ? 0.16 : 1;
+        const opacity = hovered && isXray ? 0.28 : 1;
         const glow = isTargetCell && hovered ? 'ccFlashColor 1.4s ease-in-out infinite' : 'none';
         const trans = 'opacity 0.35s ease, background 0.35s ease';
         const A0 = proj(col - 1 + GAP, r - 1 + GAP, z1), B0 = proj(col - GAP, r - 1 + GAP, z1), C0 = proj(col - 1 + GAP, r - GAP, z1), D0 = proj(col - GAP, r - GAP, z1);
@@ -1919,6 +1901,8 @@ class Component extends DCLogic {
       vals.cropMarkerStyle = { position: 'absolute', left: this.CROP_MARGIN + 'px', top: this.CROP_MARGIN + 'px', width: '200px', height: '200px', border: '2px dashed #9a9a9a', borderRadius: '8px', pointerEvents: 'none', boxShadow: '0 0 0 1px #fff' };
       vals.cropClipStyle = { position: 'absolute', left: this.CROP_MARGIN + 'px', top: this.CROP_MARGIN + 'px', width: '200px', height: '200px', overflow: 'hidden', borderRadius: '8px', background: '#fff' };
       vals.cropWrapStyle = { position: 'absolute', left: crop.cx + 'px', top: crop.cy + 'px', width: '0', height: '0', transform: 'rotate(' + crop.rot + 'deg)' };
+      vals.cropCrosshairHStyle = { position: 'absolute', left: 0, top: '100px', width: '200px', height: '1px', background: 'rgba(230,30,30,0.85)', pointerEvents: 'none' };
+      vals.cropCrosshairVStyle = { position: 'absolute', left: '100px', top: 0, width: '1px', height: '200px', background: 'rgba(230,30,30,0.85)', pointerEvents: 'none' };
       vals.cropImgStyle = { position: 'absolute', left: (-crop.w / 2) + 'px', top: (-crop.h / 2) + 'px', width: crop.w + 'px', height: crop.h + 'px', backgroundImage: 'url(' + crop.img.src + ')', backgroundSize: '100% 100%' };
       const fills = crop.fills || [];
       vals.fillRects = fills.map((f, i) => ({ style: { position: 'absolute', left: f.x + 'px', top: f.y + 'px', width: f.w + 'px', height: f.h + 'px', background: f.color, pointerEvents: 'none' } }));
@@ -2021,7 +2005,7 @@ class Component extends DCLogic {
         }
       };
     } else {
-      Object.assign(vals, { cropOuterStyle: { display: 'none' }, cropViewportStyle: {}, cropMarkerStyle: {}, cropClipStyle: {}, cropWrapStyle: {}, cropImgStyle: {}, onCropDown: () => {}, onCropMove: () => {}, onCropUp: () => {}, cropCancel: () => {}, cropConfirm: () => {}, isTransformTool: true, isFillTool: false, transformToolStyle: {}, fillToolStyle: {}, setToolTransform: () => {}, setToolFill: () => {}, handles: [], fillRects: [], noFills: true, undoFill: () => {}, fillColorHex: '#ffffff', fillColorText: '#ffffff', onFillColorPick: () => {}, onFillColorText: () => {}, hasSelectRect: false, selectRectStyle: { display: 'none' }, overrideChecked: false, onToggleOverride: () => {}, textValue: '', textDisabled: true, textAreaBg: '#f2ede4', onTextChange: () => {}, resetThumbText: () => {}, hasPreviewText: false, previewTextLine1: '', previewTextLine2: '', previewTextStyle: { display: 'none' } });
+      Object.assign(vals, { cropOuterStyle: { display: 'none' }, cropViewportStyle: {}, cropMarkerStyle: {}, cropClipStyle: {}, cropWrapStyle: {}, cropImgStyle: {}, cropCrosshairHStyle: { display: 'none' }, cropCrosshairVStyle: { display: 'none' }, onCropDown: () => {}, onCropMove: () => {}, onCropUp: () => {}, cropCancel: () => {}, cropConfirm: () => {}, isTransformTool: true, isFillTool: false, transformToolStyle: {}, fillToolStyle: {}, setToolTransform: () => {}, setToolFill: () => {}, handles: [], fillRects: [], noFills: true, undoFill: () => {}, fillColorHex: '#ffffff', fillColorText: '#ffffff', onFillColorPick: () => {}, onFillColorText: () => {}, hasSelectRect: false, selectRectStyle: { display: 'none' }, overrideChecked: false, onToggleOverride: () => {}, textValue: '', textDisabled: true, textAreaBg: '#f2ede4', onTextChange: () => {}, resetThumbText: () => {}, hasPreviewText: false, previewTextLine1: '', previewTextLine2: '', previewTextStyle: { display: 'none' } });
     }
 
     const st2 = this.state.stCrop;
