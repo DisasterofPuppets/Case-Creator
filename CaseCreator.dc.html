@@ -25,6 +25,7 @@ input,select,button,textarea{font-family:inherit}
 @keyframes demoResizeTile{0%{width:60px;height:60px}55%,100%{width:90px;height:90px}}
 @keyframes demoDeleteTile{0%{opacity:1;transform:scale(1)}45%,100%{opacity:0;transform:scale(0.4)}}
 @keyframes demoDeleteCursor{0%{opacity:1;transform:scale(1)}45%,100%{opacity:0;transform:scale(1.6)}}
+@keyframes ccFlashColor{0%,49%{background:var(--fc)}50%,57%{background:#f5c518}58%,64%{background:var(--fc)}65%,72%{background:#f5c518}73%,79%{background:var(--fc)}80%,87%{background:#f5c518}88%,100%{background:var(--fc)}}
 </style>
 </helmet>
 <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
@@ -121,7 +122,7 @@ input,select,button,textarea{font-family:inherit}
             <input type="checkbox" checked="{{ showGhosts }}" onChange="{{ onShowGhosts }}">Ghost bins
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#7a6f61;white-space:nowrap">
-            <input type="checkbox" checked="{{ coordsOn }}" onChange="{{ onCoordsOn }}">Coordinates
+            <input type="checkbox" checked="{{ coordsOn }}" onChange="{{ onCoordsOn }}">Bin numbering
           </label>
           <button onClick="{{ toggleHelp }}" title="Mouse controls help" style="width:28px;height:28px;border-radius:50%;border:1px solid #d9cdba;background:#fff;font-weight:800;font-size:13px;cursor:pointer;color:#7a6f61">?</button>
         </div>
@@ -161,13 +162,17 @@ input,select,button,textarea{font-family:inherit}
               <sc-for list="{{ ghostTiles }}" as="gt" hint-placeholder-count="0">
                 <div style="{{ gt.style }}">
                   <div style="font-weight:700;font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ gt.name }}</div>
-                  <div style="font-family:'IBM Plex Mono',monospace;font-size:9px">{{ gt.pos }}</div>
+                  <sc-if value="{{ coordsOn }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;text-align:center;width:100%">{{ gt.pos }}</div>
+                  </sc-if>
                 </div>
               </sc-for>
               <sc-for list="{{ binTiles }}" as="t" hint-placeholder-count="0">
                 <div style="{{ t.style }}">
                   <div style="font-weight:700;font-size:12px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.name }}</div>
-                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:0.9">{{ t.pos }}</div>
+                  <sc-if value="{{ coordsOn }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:0.9;text-align:center;width:100%">{{ t.pos }}</div>
+                  </sc-if>
                   <sc-if value="{{ t.multi }}" hint-placeholder-val="{{ false }}">
                     <span style="position:absolute;top:3px;right:5px;font-size:9px;font-weight:800;background:rgba(0,0,0,0.25);border-radius:3px;padding:1px 4px">{{ t.multiLabel }}</span>
                   </sc-if>
@@ -425,10 +430,61 @@ input,select,button,textarea{font-family:inherit}
       <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Where is my… (e.g. relay, XT60, heat shrink)" style="padding:15px 16px;border:1px solid #d9cdba;border-radius:10px;font-size:16px;background:#fff" style-focus="border-color:#e85d1f;outline:none">
       <div style="display:flex;flex-direction:column;gap:8px">
         <sc-for list="{{ searchResults }}" as="s" hint-placeholder-count="0">
-          <button onClick="{{ s.go }}" style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:14px 16px;cursor:pointer;text-align:left;font-size:15px" style-hover="border-color:#e85d1f">
-            <span style="font-weight:700">{{ s.name }}</span>
-            <span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="{{ s.dot }}"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7a6f61">{{ s.loc }}</span></span>
-          </button>
+          <div onClick="{{ s.go }}" onMouseEnter="{{ s.onHoverOn }}" onMouseLeave="{{ s.onHoverOff }}" style="display:flex;align-items:flex-start;gap:16px;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:14px 16px;cursor:pointer" style-hover="border-color:#e85d1f">
+            <div style="position:relative;width:200px;height:200px;flexShrink:0;borderRadius:6px;overflow:hidden">
+              <div style="{{ s.thumb.imgStyle }}"></div>
+              <sc-if value="{{ s.thumb.hasText }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ s.thumb.textStyle }}">{{ s.thumb.line1 }}<br>{{ s.thumb.line2 }}</div>
+              </sc-if>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;padding-top:2px">
+              <div style="font-weight:700;font-size:16px">{{ s.name }}</div>
+              <div style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="{{ s.dot }}"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7a6f61">{{ s.loc }}</span></div>
+              <div style="display:grid;grid-template-columns:16px 1fr;grid-template-rows:16px auto;gap:2px;width:fit-content">
+                <div></div>
+                <div style="{{ s.grid.colHeaderStyle }}">
+                  <sc-for list="{{ s.grid.colHeaders }}" as="ch" hint-placeholder-count="0">
+                    <div style="text-align:center;font-size:9px;font-weight:800;color:#fff;background:#1c1814;border-radius:2px;font-family:'IBM Plex Mono',monospace">{{ ch }}</div>
+                  </sc-for>
+                </div>
+                <div style="{{ s.grid.rowHeaderStyle }}">
+                  <sc-for list="{{ s.grid.rowHeaders }}" as="rh" hint-placeholder-count="0">
+                    <div style="display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;background:#1c1814;border-radius:2px;font-family:'IBM Plex Mono',monospace">{{ rh }}</div>
+                  </sc-for>
+                </div>
+                <div style="{{ s.grid.gridStyle }}">
+                  <sc-for list="{{ s.grid.cells }}" as="cell" hint-placeholder-count="0">
+                    <div style="{{ cell.style }}"></div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+            <sc-if value="{{ s.show3d }}" hint-placeholder-val="{{ false }}">
+              <div style="width:200px;flexShrink:0;display:flex;flex-direction:column;gap:6px">
+                <div style="font-size:11px;color:#7a6f61;font-family:'IBM Plex Mono',monospace;line-height:1.3">{{ s.threeD.label }}</div>
+                <div style="position:relative;height:190px;perspective:700px">
+                  <div style="{{ s.threeD.outerStyle }}">
+                    <div style="{{ s.threeD.worldStyle }}">
+                      <sc-for list="{{ s.threeD.planes }}" as="pl" hint-placeholder-count="0">
+                        <div style="{{ pl.style }}">
+                          <sc-for list="{{ pl.emptyCells }}" as="ec" hint-placeholder-count="0">
+                            <div style="{{ ec.style }}"></div>
+                          </sc-for>
+                          <sc-for list="{{ pl.boxes }}" as="bx" hint-placeholder-count="0">
+                            <div style="{{ bx.wrapStyle }}">
+                              <div style="{{ bx.frontStyle }}"></div>
+                              <div style="{{ bx.rightStyle }}"></div>
+                              <div style="{{ bx.topStyle }}"></div>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
         </sc-for>
       </div>
       <sc-if value="{{ searchEmpty }}" hint-placeholder-val="{{ false }}">
@@ -636,7 +692,7 @@ class Component extends DCLogic {
     mapCaseId: '', query: '',
     crop: null,
     refOn: false, refIdx: 0, refView: { scale: 1, offX: 0, offY: 0 }, refDrag: null,
-    helpOpen: false, helpDemo: null, coordsOn: true, justCreatedBinId: null, showGhosts: true, dragLevelIdx: null,
+    helpOpen: false, helpDemo: null, coordsOn: true, justCreatedBinId: null, showGhosts: true, dragLevelIdx: null, searchHoverIdx: -1,
     casePropsOpen: true,
     stName: '', stCrop: null, stHistory: [], stFuture: []
   };
@@ -696,13 +752,60 @@ class Component extends DCLogic {
       opacity: opts.dragging ? 0.75 : 1, pointerEvents: 'none', minWidth: 0
     };
   }
+  darkenColor(hex, amt) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return hex;
+    const n = parseInt(m[1], 16);
+    let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    r = Math.max(0, r - amt); g = Math.max(0, g - amt); b = Math.max(0, b - amt);
+    return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  }
+  buildCaseScene(c, targetBin, hovered, minLvl) {
+    const rows = c.rows, cols = c.cols, N = c.levels.length;
+    const CELL = 16, GAP = 1, WALLH = 10, LEVELGAP = 18;
+    const planeW = cols * CELL + (cols - 1) * GAP, planeH = rows * CELL + (rows - 1) * GAP;
+    const overlaps = (b, row, col, rowSpan, colSpan) => b.row < row + rowSpan && b.row + (b.rowSpan || 1) > row && b.col < col + colSpan && b.col + (b.colSpan || 1) > col;
+    const covers = (b, r, col) => r >= b.row && r < b.row + (b.rowSpan || 1) && col >= b.col && col < b.col + (b.colSpan || 1);
+    const planes = [];
+    for (let li = 0; li < N; li++) {
+      const emptyCells = [];
+      const levelBins = c.bins.filter(bn => (bn.levels || []).includes(li));
+      for (let r = 1; r <= rows; r++) for (let col = 1; col <= cols; col++) {
+        if (!levelBins.some(bn => covers(bn, r, col))) emptyCells.push({ style: { gridArea: r + ' / ' + col, background: 'transparent', border: '1px dotted rgba(0,0,0,0.22)' } });
+      }
+      const boxes = levelBins.map(bn => {
+        const rowSpan = bn.rowSpan || 1, colSpan = bn.colSpan || 1;
+        const w = colSpan * CELL + (colSpan - 1) * GAP, h = rowSpan * CELL + (rowSpan - 1) * GAP;
+        const isTargetBox = bn.id === targetBin.id && li === minLvl;
+        const isBlocker = li < minLvl && overlaps(bn, targetBin.row, targetBin.col, targetBin.rowSpan || 1, targetBin.colSpan || 1);
+        const color = this.levelColor(c, li);
+        const shift = hovered && isBlocker ? 'translateZ(40px)' : (hovered && isTargetBox ? 'translateZ(' + (LEVELGAP + 16) + 'px)' : 'translateZ(0)');
+        const scale = isTargetBox && hovered ? ' scale(1.06)' : '';
+        const glow = isTargetBox && hovered ? 'ccFlashColor 2s steps(1) infinite' : 'none';
+        return {
+          wrapStyle: { gridArea: bn.row + ' / ' + bn.col + ' / span ' + rowSpan + ' / span ' + colSpan, position: 'relative', transformStyle: 'preserve-3d', transform: shift + scale, transition: 'transform 0.4s ease' },
+          frontStyle: { position: 'absolute', left: '0', top: h + 'px', width: w + 'px', height: WALLH + 'px', background: this.darkenColor(color, 55), transformOrigin: 'top', transform: 'rotateX(90deg)', '--fc': this.darkenColor(color, 55), animation: glow },
+          rightStyle: { position: 'absolute', left: w + 'px', top: '0', width: WALLH + 'px', height: h + 'px', background: this.darkenColor(color, 30), transformOrigin: 'left', transform: 'rotateY(-90deg)', '--fc': this.darkenColor(color, 30), animation: glow },
+          topStyle: { position: 'absolute', left: '0', top: '0', width: w + 'px', height: h + 'px', background: color, boxShadow: '0 1px 2px rgba(0,0,0,0.2)', transform: 'translateZ(' + WALLH + 'px)', '--fc': color, animation: glow }
+        };
+      });
+      planes.push({ style: { position: 'absolute', inset: '0', display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',' + CELL + 'px)', gridTemplateRows: 'repeat(' + rows + ',' + CELL + 'px)', gap: GAP + 'px', transformStyle: 'preserve-3d', transform: 'translateZ(' + ((N - 1 - li) * LEVELGAP) + 'px)' }, emptyCells, boxes });
+    }
+    const naturalW = (planeW + planeH) * 0.72, naturalH = (planeW + planeH) * 0.42 + (WALLH + 70);
+    const fitScale = Math.min(1, 190 / naturalW, 170 / naturalH);
+    return {
+      outerStyle: { position: 'absolute', left: '50%', top: '50%', width: planeW + 'px', height: planeH + 'px', transform: 'translate(-50%,-50%) scale(' + fitScale + ')', transformOrigin: 'center' },
+      worldStyle: { width: '100%', height: '100%', position: 'relative', transformStyle: 'preserve-3d', transform: 'rotateX(55deg) rotateZ(45deg)' },
+      planes
+    };
+  }
   gridStyles(rows, cols, interactive, cs, coordsOn) {
     const wrap = { display: 'grid', gap: '4px', gridTemplateColumns: 'repeat(' + cols + ',1fr)', gridTemplateRows: 'repeat(' + rows + ',minmax(44px,auto))' };
     if (interactive) { wrap.touchAction = 'none'; wrap.cursor = 'crosshair'; wrap.userSelect = 'none'; wrap.WebkitUserSelect = 'none'; }
     const cells = [];
     for (let r = 1; r <= rows; r++) for (let c = 1; c <= cols; c++)
       cells.push({
-        style: { gridArea: r + ' / ' + c, border: '1px dashed #ddd0bd', borderRadius: '4px', pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontFamily: "'IBM Plex Mono',monospace", color: '#7a6f61', opacity: coordsOn ? 0.5 : 0 },
+        style: { gridArea: r + ' / ' + c, border: '1px dashed #ddd0bd', borderRadius: '4px', pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', width: '100%', fontSize: '10px', fontFamily: "'IBM Plex Mono',monospace", color: '#7a6f61', opacity: coordsOn ? 0.5 : 0 },
         label: cs && coordsOn ? this.posLabel(cs, { row: r, col: c }) : ''
       });
     return { wrap, cells };
@@ -1724,12 +1827,44 @@ class Component extends DCLogic {
     const q = st.query.trim().toLowerCase();
     const hits = [];
     if (q) savedCases.forEach(c => c.bins.forEach(b => { if ((b.label || 'Unlabeled').toLowerCase().includes(q)) hits.push({ c, b }); }));
-    vals.searchResults = hits.slice(0, 30).map(({ c, b }) => ({
-      name: b.label || 'Unlabeled',
-      loc: c.name + ' · ' + b.levels.map(i => (c.levels[i] || {}).name).join(',') + ' · ' + this.posLabel(c, b),
-      dot: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(c, b.levels[0] || 0), display: 'inline-block', flexShrink: 0 },
-      go: () => this.setState({ tab: 'map', mapCaseId: c.id })
-    }));
+    const hoverIdx = st.searchHoverIdx;
+    vals.searchResults = hits.slice(0, 30).map(({ c, b }, i) => {
+      const maxLvl = Math.max(...b.levels), minLvl = Math.min(...b.levels);
+      const levelName = (c.levels[maxLvl] || {}).name || ('Level ' + (maxLvl + 1));
+      const lines = this.wrapThumbText(b.thumbOverride ? b.thumbText : b.label);
+      const thumb = {
+        imgStyle: { width: '100%', height: '100%', backgroundImage: 'url(' + (b.image || this.DEFAULT_ICON) + ')', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '6px', border: '1px solid #d9cdba' },
+        hasText: lines.length > 0, line1: lines[0] || '', line2: lines[1] || '',
+        textStyle: { position: 'absolute', bottom: '6px', right: '8px', left: '8px', textAlign: 'right', color: '#000', fontFamily: "'Roboto Condensed',sans-serif", fontWeight: 700, fontSize: '18px', lineHeight: '1.2', textShadow: '0 0 4px #fff, 0 0 4px #fff', pointerEvents: 'none', overflow: 'hidden' }
+      };
+      const rows = c.rows, cols = c.cols;
+      const inCell = (r, col) => r >= b.row && r < b.row + (b.rowSpan || 1) && col >= b.col && col < b.col + (b.colSpan || 1);
+      const cells = [];
+      for (let r = 1; r <= rows; r++) for (let col = 1; col <= cols; col++) cells.push({ style: { gridArea: r + ' / ' + col, border: '1px solid #e6dccd', borderRadius: '2px', background: inCell(r, col) ? this.levelColor(c, minLvl) : '#fff' } });
+      const grid = {
+        colHeaders: Array.from({ length: cols }, (_, k) => this.seqLabel(c.hIndex, k, cols)),
+        rowHeaders: Array.from({ length: rows }, (_, k) => this.seqLabel(c.vIndex, k, rows)),
+        colHeaderStyle: { display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',14px)', gap: '2px' },
+        rowHeaderStyle: { display: 'grid', gridTemplateRows: 'repeat(' + rows + ',14px)', gap: '2px' },
+        gridStyle: { display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',14px)', gridTemplateRows: 'repeat(' + rows + ',14px)', gap: '2px' },
+        cells
+      };
+      const show3d = true;
+      let threeD = null;
+      if (show3d) {
+        threeD = this.buildCaseScene(c, b, hoverIdx === i, minLvl);
+        threeD.label = c.name + ' · ' + levelName + ' · ' + this.posLabel(c, b);
+      }
+      return {
+        name: b.label || 'Unlabeled',
+        loc: c.name + ' · ' + b.levels.map(k => (c.levels[k] || {}).name).join(',') + ' · ' + this.posLabel(c, b),
+        dot: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(c, b.levels[0] || 0), display: 'inline-block', flexShrink: 0 },
+        thumb, grid, show3d, threeD,
+        onHoverOn: () => i < 3 && this.setState({ searchHoverIdx: i }),
+        onHoverOff: () => this.setState(s => s.searchHoverIdx === i ? { searchHoverIdx: -1 } : null),
+        go: () => this.setState({ tab: 'map', mapCaseId: c.id })
+      };
+    });
     const totalBins = savedCases.reduce((n, c) => n + c.bins.length, 0);
     vals.searchEmpty = (!q && totalBins > 0) || (q && hits.length === 0) || totalBins === 0;
     vals.searchEmptyMsg = totalBins === 0 ? 'No bins yet — build a case first.' : (q ? 'No match for “' + st.query + '”.' : 'Type a part name to find its bin.');
