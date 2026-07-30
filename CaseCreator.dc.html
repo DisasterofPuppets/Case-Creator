@@ -79,11 +79,7 @@ input,select,button,textarea{font-family:inherit}
 
     <sc-if value="{{ showBuilder }}" hint-placeholder-val="{{ false }}">
     <section data-screen-label="Case Builder" style="display:flex;flex-direction:column;gap:14px">
-      <sc-if value="{{ noBuilderCase }}" hint-placeholder-val="{{ false }}">
-      <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:28px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
-        <sc-if value="{{ noSavedCases }}" hint-placeholder-val="{{ false }}">
-        <div style="color:#7a6f61;font-size:14px">No current cases loaded</div>
-        </sc-if>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button onClick="{{ createBlank }}" style="background:#e85d1f;color:#fff;border:none;border-radius:8px;padding:12px 22px;font-weight:700;font-size:15px;cursor:pointer" style-hover="background:#d95511">Create New Case</button>
         <sc-if value="{{ hasSavedCases }}" hint-placeholder-val="{{ false }}">
         <select value="{{ builderCaseId }}" onChange="{{ onBuilderCase }}" style="padding:10px;border:1px solid #d9cdba;border-radius:8px;background:#fff;font-size:15px;width:100%;max-width:320px">
@@ -92,6 +88,12 @@ input,select,button,textarea{font-family:inherit}
             <option value="{{ c.id }}">{{ c.name }}</option>
           </sc-for>
         </select>
+        </sc-if>
+      </div>
+      <sc-if value="{{ noBuilderCase }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:28px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
+        <sc-if value="{{ noSavedCases }}" hint-placeholder-val="{{ false }}">
+        <div style="color:#7a6f61;font-size:14px">No current cases loaded</div>
         </sc-if>
       </div>
       </sc-if>
@@ -463,7 +465,10 @@ input,select,button,textarea{font-family:inherit}
       <div style="display:flex;flex-direction:column;gap:8px">
         <sc-for list="{{ searchResults }}" as="s" hint-placeholder-count="0">
           <div onClick="{{ s.go }}" onMouseEnter="{{ s.onHoverOn }}" onMouseLeave="{{ s.onHoverOff }}" style="display:flex;flex-direction:column;gap:12px;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:14px 16px;cursor:pointer" style-hover="border-color:#e85d1f">
-            <div style="font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;gap:6px">Part: {{ s.name }} - Case: {{ s.caseName }} - Location - Level: {{ s.layerName }} - <span style="{{ s.layerColorDot }}"></span> {{ s.posLabel }}</div>
+            <div style="font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;text-align:center">Part: {{ s.name }} - Case: {{ s.caseName }} - Location: {{ s.layerName }} <span style="{{ s.layerColorDot }}"></span> {{ s.posLabel }}</div>
+            <sc-if value="{{ s.hasNoteMatch }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:13px;color:#7a6f61;text-align:center">Matched Notes: {{ s.matchedNotesSnippet }}</div>
+            </sc-if>
             <div style="display:flex;align-items:center;gap:16px">
               <div style="position:relative;width:200px;height:200px;flexShrink:0;overflow:hidden">
                 <div style="{{ s.thumb.imgStyle }}"></div>
@@ -757,7 +762,7 @@ class Component extends DCLogic {
     mapCaseId: '', query: '',
     crop: null,
     refOn: false, refIdx: 0, refView: { scale: 1, offX: 0, offY: 0 }, refDrag: null,
-    helpOpen: false, helpDemo: null, coordsOn: true, justCreatedBinId: null, showGhosts: true, dragLevelIdx: null, searchHoverIdx: -1,
+    helpOpen: false, helpDemo: null, coordsOn: true, justCreatedBinId: null, showGhosts: true, dragLevelIdx: null, searchHoverIdx: -1, lastAllLevels: false,
     casePropsOpen: true,
     stCrop: null, stHistory: [], stFuture: [], cropHistory: [], cropFuture: []
   };
@@ -941,7 +946,7 @@ class Component extends DCLogic {
   }
   createBlankGuarded() {
     const cur = this.getCase(this.state.builderCaseId);
-    if (cur && cur.bins.length > 0 && !confirm('"' + cur.name + '" has ' + cur.bins.length + ' bin(s) placed that haven\'t been exported yet. Start a new case anyway?')) return;
+    if (cur && !cur.saved && cur.bins.length > 0 && !confirm('"' + cur.name + '" has ' + cur.bins.length + ' bin(s) placed that haven\'t been exported yet. Start a new case anyway?')) return;
     this.createBlank();
   }
   createBlank() {
@@ -951,17 +956,42 @@ class Component extends DCLogic {
       bins: [], refImages: [], saved: false
     };
     this.persist({ cases: this.state.data.cases.concat(cs) });
-    this.setState({ tab: 'builder', builderCaseId: cs.id, activeLevel: 0, selBinId: null });
+    this.setState({ tab: 'builder', builderCaseId: cs.id, activeLevel: 0, selBinId: null, lastAllLevels: false });
   }
   csvEscape(s) { s = String(s == null ? '' : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
-  csvParseLine(line) {
-    const out = []; let cur = '', q = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (q) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
-      else { if (ch === '"') q = true; else if (ch === ',') { out.push(cur); cur = ''; } else cur += ch; }
+  matchedNoteSnippet(notes, q) {
+    const parts = String(notes || '').split(',');
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i].toLowerCase().includes(q)) {
+        const cur = parts[i].replace(/\s+/g, ' ').trim();
+        let prefix = '';
+        if (i > 0) {
+          const prevWords = parts[i - 1].replace(/\s+/g, ' ').trim().split(' ');
+          const last = prevWords[prevWords.length - 1];
+          if (last) prefix = last + ', ';
+        }
+        return prefix + cur;
+      }
     }
-    out.push(cur); return out;
+    return '';
+  }
+  csvParseRows(text) {
+    const rows = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+        else cur += c;
+      } else {
+        if (c === '"') q = true;
+        else if (c === ',') { row.push(cur); cur = ''; }
+        else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+        else if (c === '\r') { /* skip */ }
+        else cur += c;
+      }
+    }
+    if (cur.length || row.length) { row.push(cur); rows.push(row); }
+    return rows.filter(r => !(r.length === 1 && r[0] === ''));
   }
   async thumbBlob(dataUrl) {
     return await (await fetch(dataUrl || this.DEFAULT_ICON)).blob();
@@ -1105,22 +1135,22 @@ class Component extends DCLogic {
     if (!csvFile) return null;
     const imgFiles = {};
     files.forEach(f => { if (/\/images\//i.test(f.name)) imgFiles[f.name.split('/').pop()] = f; });
-    const text = new TextDecoder().decode(csvFile.data);
-    const lines = text.split(/\r?\n/).filter(l => l.length);
-    let name = 'Imported case', cols = 6, rows = 4;
+    const text = new TextDecoder().decode(csvFile.data).replace(/^\uFEFF/, '');
+    const rows = this.csvParseRows(text);
+    let name = 'Imported case', cols = 6, rows_ = 4;
     let levels = [{ name: '1' }], hIndex = { mode: 'letter', start: 'A', reverse: false }, vIndex = { mode: 'number', start: 1, reverse: false };
     let headerIdx = 0;
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i];
-      if (l.startsWith('#case,')) { const p = this.csvParseLine(l.slice(6)); name = p[0]; cols = parseInt(p[1]) || cols; rows = parseInt(p[2]) || rows; }
-      else if (l.startsWith('#levels,')) { levels = l.slice(8).split(';').map(n => ({ name: n })); }
-      else if (l.startsWith('#hindex,')) { const p = l.slice(8).split(','); hIndex = { mode: p[0], start: p[1], reverse: p[2] === 'true' }; }
-      else if (l.startsWith('#vindex,')) { const p = l.slice(8).split(','); vIndex = { mode: p[0], start: p[1], reverse: p[2] === 'true' }; }
-      else if (l.startsWith('id,label,row')) { headerIdx = i; break; }
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (r[0] === '#case') { name = r[1]; cols = parseInt(r[2]) || cols; rows_ = parseInt(r[3]) || rows_; }
+      else if (r[0] === '#levels') { levels = (r[1] || '').split(';').map(n => ({ name: n })); }
+      else if (r[0] === '#hindex') { hIndex = { mode: r[1], start: r[2], reverse: r[3] === 'true' }; }
+      else if (r[0] === '#vindex') { vIndex = { mode: r[1], start: r[2], reverse: r[3] === 'true' }; }
+      else if (r[0] === 'id' && r[1] === 'label') { headerIdx = i; break; }
     }
     const bins = [];
-    for (const l of lines.slice(headerIdx + 1)) {
-      const p = this.csvParseLine(l); if (p.length < 9) continue;
+    for (const p of rows.slice(headerIdx + 1)) {
+      if (p.length < 9) continue;
       let image = null;
       if (p[8] && imgFiles[p[8]]) {
         try { image = await this.blobToDataUrl(new Blob([imgFiles[p[8]].data], { type: 'image/png' })); } catch (e) {}
@@ -1132,7 +1162,7 @@ class Component extends DCLogic {
       });
     }
     levels = levels.map((l, i) => ({ ...l, color: l.color || this.PAL[i % this.PAL.length] }));
-    return { id: 'c' + Date.now() + Math.random().toString(36).slice(2, 6), name, cols, rows, levels, hIndex, vIndex, bins, refImages: [], saved: true };
+    return { id: 'c' + Date.now() + Math.random().toString(36).slice(2, 6), name, cols, rows: rows_, levels, hIndex, vIndex, bins, refImages: [], saved: true };
   }
   async parseCaseZip(buf) {
     return await this.caseFromZipEntries(await this.readZip(buf));
@@ -1153,29 +1183,30 @@ class Component extends DCLogic {
     }
     return out;
   }
-  dedupeName(name, existingNames) {
-    let n = name, i = 1;
-    while (existingNames.includes(n)) { n = name + ' (' + (++i) + ')'; }
-    return n;
-  }
   async onImportFiles(fileList) {
     const files = Array.from(fileList || []);
     if (!files.length) return;
-    const existing = this.state.data.cases.map(c => c.name);
     const added = [];
     for (const f of files) {
       try {
         const cs = await this.parseCaseZip(await f.arrayBuffer());
-        if (cs) { cs.name = this.dedupeName(cs.name, existing.concat(added.map(a => a.name))); added.push(cs); }
+        if (cs) added.push(cs);
       } catch (e) {}
     }
     if (!added.length) { alert('No valid case files found.'); return; }
-    this.persist({ cases: this.state.data.cases.concat(added) });
-    this.toast('Imported ' + added.length + ' case' + (added.length > 1 ? 's' : ''));
-  }
-  async onImportFolder(fileList) {
-    const files = Array.from(fileList || []).filter(f => /\.zip$/i.test(f.name));
-    await this.onImportFiles(files);
+    let cases = this.state.data.cases;
+    let replaced = 0;
+    added.forEach(cs => {
+      const dupe = cases.find(c => c.name === cs.name);
+      if (dupe) { cs.id = dupe.id; cases = cases.map(c => c.id === dupe.id ? cs : c); replaced++; }
+      else cases = cases.concat(cs);
+    });
+    this.persist({ cases });
+    const added2 = added.length - replaced;
+    const parts = [];
+    if (replaced) parts.push('updated ' + replaced + ' case' + (replaced > 1 ? 's' : ''));
+    if (added2) parts.push('imported ' + added2 + ' new case' + (added2 > 1 ? 's' : ''));
+    this.toast(parts.join(', '));
   }
   async onImportCollectionFile(file) {
     try {
@@ -1555,12 +1586,11 @@ class Component extends DCLogic {
       onBuilderCase: (e) => {
         const val = e.target.value;
         if (cs && !cs.saved && cs.bins.length > 0 && !confirm('Editing a different case will discard your current unsaved case ("' + cs.name + '"). Continue?')) { e.target.value = st.builderCaseId; return; }
-        this.setState({ builderCaseId: val, activeLevel: 0, selectedLevels: null, selBinId: null, drag: null });
+        this.setState({ builderCaseId: val, activeLevel: 0, selectedLevels: null, selBinId: null, drag: null, lastAllLevels: false });
       },
       exportCase: () => cs && this.saveCasePrompt(cs),
       exportAllOpacity: savedCases.length ? '1' : '0.5',
       onImportFiles: (e) => { const files = e.target.files; if (files && files.length) this.onImportFiles(files); e.target.value = ''; },
-      onImportFolder: (e) => { const files = e.target.files; if (files && files.length) this.onImportFolder(files); e.target.value = ''; },
       onImportCollectionFile: (e) => { const f = e.target.files && e.target.files[0]; if (f) this.onImportCollectionFile(f); e.target.value = ''; },
       exportCollection: () => this.exportCollection(),
       collectionModalOpen: !!st.collectionModalOpen,
@@ -1798,7 +1828,7 @@ class Component extends DCLogic {
           const r = Math.min(dd.r0, dd.r1), c = Math.min(dd.c0, dd.c1);
           const rs = Math.abs(dd.r1 - dd.r0) + 1, ccs = Math.abs(dd.c1 - dd.c0) + 1;
           if (this.overlapFree(visible, null, r, c, rs, ccs)) {
-            const bin = { id: 'b' + Date.now() + Math.random().toString(36).slice(2, 6), label: '', row: r, col: c, rowSpan: rs, colSpan: ccs, levels: [activeLevel], notes: '', image: null };
+            const bin = { id: 'b' + Date.now() + Math.random().toString(36).slice(2, 6), label: '', row: r, col: c, rowSpan: rs, colSpan: ccs, levels: this.state.lastAllLevels ? allLevelIdx() : [activeLevel], notes: '', image: null };
             this.updateCase(cs.id, { bins: bins.concat(bin) });
             this.setState({ drag: null, selBinId: bin.id, justCreatedBinId: bin.id });
           } else this.setState({ drag: null });
@@ -1950,7 +1980,7 @@ class Component extends DCLogic {
           },
           posText: this.posLabel(cs, selBin),
           allLevelsChecked: (selBin.levels || []).length === cs.levels.length,
-          onAllLevels: (e) => this.updateBin(cs, si, { levels: e.target.checked ? allLevelIdx() : [activeLevel] }),
+          onAllLevels: (e) => { this.updateBin(cs, si, { levels: e.target.checked ? allLevelIdx() : [activeLevel] }); this.setState({ lastAllLevels: e.target.checked }); },
           levelChecks: cs.levels.map((lv, i) => ({
             name: lv.name, checked: (selBin.levels || []).includes(i),
             dotStyle: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(cs, i), display: 'inline-block', flexShrink: 0 },
@@ -2047,7 +2077,7 @@ class Component extends DCLogic {
     vals.mapLevels = mapCase ? this.buildLevelViews(mapCase) : [];
     const q = st.query.trim().toLowerCase();
     const hits = [];
-    if (q) savedCases.forEach(c => c.bins.forEach(b => { if ((b.label || 'Unlabeled').toLowerCase().includes(q)) hits.push({ c, b }); }));
+    if (q) savedCases.forEach(c => c.bins.forEach(b => { if ((b.label || 'Unlabeled').toLowerCase().includes(q) || (b.notes || '').toLowerCase().includes(q)) hits.push({ c, b }); }));
     const hoverIdx = st.searchHoverIdx;
     vals.searchResults = hits.slice(0, 30).map(({ c, b }, i) => {
       const maxLvl = Math.max(...b.levels), minLvl = Math.min(...b.levels);
@@ -2084,6 +2114,8 @@ class Component extends DCLogic {
         threeD = this.buildCaseScene(c, b, hoverIdx === i, minLvl);
         threeD.label = 'Layer : ' + levelName + ' - Position: ' + this.posLabel(c, b);
       }
+      const noteMatch = q && (b.notes || '').toLowerCase().includes(q);
+      const matchedNotesSnippet = noteMatch ? this.matchedNoteSnippet(b.notes, q) : '';
       return {
         name: b.label || 'Unlabeled',
         caseName: c.name,
@@ -2092,6 +2124,7 @@ class Component extends DCLogic {
         posLabel: this.posLabel(c, b),
         loc: c.name + ' · ' + b.levels.map(k => (c.levels[k] || {}).name).join(',') + ' · ' + this.posLabel(c, b),
         dot: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(c, b.levels[0] || 0), display: 'inline-block', flexShrink: 0 },
+        hasNoteMatch: !!noteMatch, matchedNotesSnippet,
         thumb, grid, show3d, threeD,
         onHoverOn: () => i < 3 && this.setState({ searchHoverIdx: i }),
         onHoverOff: () => this.setState(s => s.searchHoverIdx === i ? { searchHoverIdx: -1 } : null),
