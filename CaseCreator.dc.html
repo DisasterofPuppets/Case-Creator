@@ -45,8 +45,12 @@ input,select,button,textarea{font-family:inherit}
 @keyframes demoEnterB{0%{transform:translate(0,40px)}18%,100%{transform:translate(0,0)}}
 @keyframes demoReorderCursorPos{0%,45%{top:8px}50%,95%{top:50px}100%{top:8px}}
 @keyframes demoCheckboxClick{0%,38%{background:transparent}42%,50%{background:#e85d1f}55%,100%{background:transparent}}
+@keyframes ccFlashG{0%,19%{background:var(--fc)}20%,27%{background:#2f9e44}28%,34%{background:var(--fc)}35%,42%{background:#2f9e44}43%,49%{background:var(--fc)}50%,57%{background:#2f9e44}58%,100%{background:var(--fc)}}
+@keyframes ccFlashGreen{0%,19%{background:#bfe8c4}20%,27%{background:#2f9e44}28%,34%{background:#bfe8c4}35%,42%{background:#2f9e44}43%,49%{background:#bfe8c4}50%,57%{background:#2f9e44}58%,100%{background:#bfe8c4}}
 @keyframes ccFlashColor{0%,19%{background:var(--fc)}20%,27%{background:#f5c518}28%,34%{background:var(--fc)}35%,42%{background:#f5c518}43%,49%{background:var(--fc)}50%,57%{background:#f5c518}58%,100%{background:var(--fc)}}
 @keyframes ccHeaderFlash{0%,19%{background:#f5c518;color:#1c1814}20%,27%{background:#1c1814;color:#fff}28%,100%{background:#f5c518;color:#1c1814}}
+@keyframes ccMarchAnts{to{background-position:12px 0,-12px 100%,0 -12px,100% 12px,0 0}}
+@keyframes ccMarchAntsPath{to{stroke-dashoffset:-10}}
 </style>
 </helmet>
 <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
@@ -123,7 +127,7 @@ input,select,button,textarea{font-family:inherit}
           <sc-if value="{{ refShow }}" hint-placeholder-val="{{ false }}">
         <div style="{{ refViewportStyle }}" ref="{{ refViewportRef }}" onWheel="{{ onRefWheel }}" onPointerDown="{{ onRefDown }}" onPointerMove="{{ onRefMove }}" onPointerUp="{{ onRefUp }}" onPointerCancel="{{ onRefUp }}">
               <sc-if value="{{ hasRefSrc }}" hint-placeholder-val="{{ false }}">
-                <img src="{{ refSrc }}" draggable="false" style="{{ refImgStyle }}">
+                <div style="{{ refImgStyle }}"></div>
               </sc-if>
               <sc-if value="{{ refHasMulti }}" hint-placeholder-val="{{ false }}">
                 <button onClick="{{ refPrev }}" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:none;background:rgba(28,24,20,0.65);color:#fff;font-size:16px;cursor:pointer">‹</button>
@@ -461,7 +465,74 @@ input,select,button,textarea{font-family:inherit}
     <sc-if value="{{ showSearch }}" hint-placeholder-val="{{ true }}">
     <section data-screen-label="Search" style="display:flex;flex-direction:column;gap:14px">
       <sc-if value="{{ hasSavedCases }}" hint-placeholder-val="{{ true }}">
-      <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Enter a part name" style="padding:15px 16px;border:1px solid #d9cdba;border-radius:10px;font-size:16px;background:#fff" style-focus="border-color:#e85d1f;outline:none">
+      <div style="display:flex;gap:10px;align-items:center">
+        <div style="position:relative;flex:1">
+          <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Enter a part name" style="width:100%;box-sizing:border-box;padding:15px 40px 15px 16px;border:1px solid #d9cdba;border-radius:10px;font-size:16px;background:#fff" style-focus="border-color:#e85d1f;outline:none">
+          <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ onClearQuery }}" title="Clear search" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:none;background:transparent;color:#a0958a;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%" style-hover="background:#f2ece1;color:#1c1814">×</button>
+          </sc-if>
+        </div>
+        <button onClick="{{ onFindEmpty }}" title="Find empty container spaces" style="white-space:nowrap;padding:14px 18px;border:1px solid #d9cdba;border-radius:10px;font-size:14px;font-weight:700;background:#fff;color:#1c1814;cursor:pointer" style-hover="border-color:#e85d1f">Find Empty</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:flex-end;font-size:12px;color:#7a6f61;padding:0 2px">
+        <sc-for list="{{ legendItems }}" as="lg" hint-placeholder-count="0">
+          <div style="display:flex;align-items:center;gap:5px"><span style="{{ lg.swatch }}"></span>{{ lg.label }}</div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ showEmptyResults }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ emptyResults }}" as="e" hint-placeholder-count="0">
+            <div onClick="{{ e.go }}" onMouseEnter="{{ e.onHoverOn }}" onMouseLeave="{{ e.onHoverOff }}" style="display:flex;flex-direction:column;gap:10px;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:14px 16px;cursor:pointer" style-hover="border-color:#e85d1f">
+              <div style="font-weight:700;font-size:16px;text-align:center">Case: {{ e.caseName }}</div>
+              <div style="font-size:11px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:#a0958a;text-align:center">Locations</div>
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+                <sc-for list="{{ e.levels }}" as="lv" hint-placeholder-count="0">
+                  <div style="font-size:13px;color:#7a6f61;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center">
+                    <span style="{{ lv.dot }}"></span><span style="font-weight:700;color:#1c1814">{{ lv.levelName }}:</span><span style="font-family:'IBM Plex Mono',monospace">{{ lv.coords }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap">
+                <div style="flex:1;display:flex;align-items:center;justify-content:center;height:200px;min-width:0">
+                  <div style="display:grid;grid-template-columns:16px 1fr;grid-template-rows:16px auto;gap:2px">
+                    <div></div>
+                    <div style="{{ e.grid.colHeaderStyle }}">
+                      <sc-for list="{{ e.grid.colHeaders }}" as="ch" hint-placeholder-count="0">
+                        <div style="{{ ch.style }}">{{ ch.label }}</div>
+                      </sc-for>
+                    </div>
+                    <div style="{{ e.grid.rowHeaderStyle }}">
+                      <sc-for list="{{ e.grid.rowHeaders }}" as="rh" hint-placeholder-count="0">
+                        <div style="{{ rh.style }}">{{ rh.label }}</div>
+                      </sc-for>
+                    </div>
+                    <div style="{{ e.grid.gridStyle }}">
+                      <sc-for list="{{ e.grid.cells }}" as="cell" hint-placeholder-count="0">
+                        <div style="{{ cell.style }}"></div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+                <div style="width:200px;height:200px;flexShrink:0;position:relative">
+                  <div style="{{ e.threeD.outerStyle }}">
+                    <sc-for list="{{ e.threeD.items }}" as="it" hint-placeholder-count="0">
+                      <sc-if value="{{ it.isBox }}" hint-placeholder-val="{{ false }}">
+                        <div style="{{ it.frontStyle }}"></div>
+                        <div style="{{ it.rightStyle }}"></div>
+                        <div style="{{ it.topStyle }}"></div>
+                      </sc-if>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ emptyResultsEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;color:#a0958a;font-size:14px;padding:20px">No empty container space — every cell is filled.</div>
+          </sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showNormalResults }}" hint-placeholder-val="{{ true }}">
       <div style="display:flex;flex-direction:column;gap:8px">
         <sc-for list="{{ searchResults }}" as="s" hint-placeholder-count="0">
           <div onClick="{{ s.go }}" onMouseEnter="{{ s.onHoverOn }}" onMouseLeave="{{ s.onHoverOff }}" style="display:flex;flex-direction:column;gap:12px;background:#fffdf9;border:1px solid #e6dccd;border-radius:10px;padding:14px 16px;cursor:pointer" style-hover="border-color:#e85d1f">
@@ -512,6 +583,7 @@ input,select,button,textarea{font-family:inherit}
       </div>
       <sc-if value="{{ searchEmpty }}" hint-placeholder-val="{{ false }}">
         <div style="text-align:center;color:#a0958a;font-size:14px;padding:20px">{{ searchEmptyMsg }}</div>
+      </sc-if>
       </sc-if>
       </sc-if>
       <sc-if value="{{ noSavedCases }}" hint-placeholder-val="{{ false }}">
@@ -625,29 +697,57 @@ input,select,button,textarea{font-family:inherit}
     <sc-if value="{{ showThumbEditor }}" hint-placeholder-val="{{ false }}">
     <section data-screen-label="Thumbnail Editor" style="display:flex;flex-direction:column;gap:16px;align-items:center;background:#e4ded2;border-radius:12px;padding:20px;box-sizing:border-box">
       <div style="width:100%;max-width:900px;display:flex;flex-direction:column;gap:16px">
-        <sc-if value="{{ stNoCrop }}" hint-placeholder-val="{{ true }}">
-          <div style="border:2px dashed #d9cdba;border-radius:12px;padding:40px;display:flex;flex-direction:column;align-items:center;gap:8px;background:#e4ded2" onDragOver="{{ stOnDragOver }}" onDragLeave="{{ stOnDragLeave }}" onDrop="{{ stOnDrop }}">
-            <label style="cursor:pointer;text-align:center;font-weight:700;font-size:14px" style-hover="color:#e85d1f">
-              Click to select, drag an image here, or click <a href="javascript:void(0)" onClick="{{ stStartBlank }}" style="font-weight:700">here</a> to paste from clipboard.
+        <div style="background:#e4ded2;border:1px solid #d9cdba;border-radius:12px;padding:16px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-bottom:1px solid #d9cdba;padding-bottom:14px;margin-bottom:14px">
+            <button onClick="{{ stSetSelect }}" title="Select / Move tool" style="{{ stSelectBtnStyle }}"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 2 L4 19 L8.5 15.5 L11.5 21.5 L14.5 20 L11.5 14 L17.5 14 Z" fill="currentColor"></path></svg></button>
+            <button onClick="{{ stSetFill }}" title="Fill area tool" style="{{ stFillBtnStyle }}"><svg width="18" height="18" viewBox="0 0 24 24"><g transform="rotate(135 12 12)"><rect x="7" y="2" width="10" height="5.5" rx="1.5" fill="currentColor"></rect><rect x="11" y="7.5" width="2" height="7" fill="currentColor"></rect><rect x="9.3" y="14.5" width="5.4" height="3" rx="0.8" fill="currentColor"></rect><rect x="10.5" y="17.3" width="3" height="4.7" rx="1" fill="currentColor"></rect></g></svg></button>
+            <button onClick="{{ stSetMarquee }}" title="Selection tool" style="{{ stMarqueeBtnStyle }}"><svg width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"></rect></svg></button>
+            <button onClick="{{ stSetLasso }}" title="Freehand selection tool" style="{{ stLassoBtnStyle }}"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 13c-1.5-4.5 2.5-9 8-9s9.5 3.5 8 8-6 6.5-11 5c-2.5-.7-3.5-1.2-3-2.5.5-1.2 3-1 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.2" stroke-linecap="round"></path></svg></button>
+            <button onClick="{{ stDeleteSelection }}" disabled="{{ stDeleteSelectionDisabled }}" title="Delete selected area" style="{{ stDeleteSelectionStyle }}">🗑</button>
+            <div style="position:relative">
+              <button onClick="{{ stToggleColorPicker }}" title="Fill color" style="{{ stColorSwatchStyle }}"></button>
+              <sc-if value="{{ stColorPickerOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:38px;left:0;z-index:10;background:#fff;border:1px solid #d9cdba;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;box-shadow:0 6px 18px rgba(0,0,0,0.18);width:190px">
+                  <input type="color" value="{{ stFillColorHex }}" onChange="{{ stOnFillColorPick }}" style="width:100%;height:34px;padding:0;border:none;background:none;cursor:pointer">
+                  <input type="text" value="{{ stFillColorText }}" onChange="{{ stOnFillColorText }}" placeholder="#ffffff or rgb(255,255,255)" style="padding:7px 8px;border:1px solid #d9cdba;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace">
+                </div>
+              </sc-if>
+            </div>
+            <div style="width:1px;align-self:stretch;background:#d9cdba"></div>
+            <button onClick="{{ stUndo }}" disabled="{{ stUndoDisabled }}" title="Undo (Ctrl+Z)" style="{{ stUndoStyle }}">↶</button>
+            <button onClick="{{ stRedo }}" disabled="{{ stRedoDisabled }}" title="Redo (Ctrl+Y)" style="{{ stRedoStyle }}">↷</button>
+            <div style="width:1px;align-self:stretch;background:#d9cdba"></div>
+            <button onClick="{{ stZoomOut }}" disabled="{{ stZoomOutDisabled }}" title="Zoom out (-)" style="{{ stZoomOutStyle }}">−</button>
+            <button onClick="{{ stZoomIn }}" disabled="{{ stZoomInDisabled }}" title="Zoom in (+)" style="{{ stZoomInStyle }}">+</button>
+            <button onClick="{{ stZoomReset }}" title="Reset to default view" style="{{ stZoomResetStyle }}">Default view</button>
+            <span style="font-size:11px;color:#7a6f61;font-family:'IBM Plex Mono',monospace">{{ stZoomLabel }}</span>
+            <label title="Import image as new layer" style="margin-left:auto;cursor:pointer;display:flex;align-items:center;gap:6px;border:1px solid #c7c2b8;background:#f0efec;color:#4a4238;border-radius:6px;padding:0 12px;height:36px;font-size:12px;font-weight:700" style-hover="border-color:#e85d1f;color:#e85d1f">
+              <svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 3v12M12 15l-4-4M12 15l4-4M4 19h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              Import Image
               <input type="file" accept="image/*" onChange="{{ stOnUpload }}" style="display:none">
             </label>
           </div>
-        </sc-if>
 
-        <sc-if value="{{ stHasCrop }}" hint-placeholder-val="{{ false }}">
-          <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;background:#e4ded2;border:1px solid #d9cdba;border-radius:12px;padding:20px">
-            <div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:14px;align-items:center">
+          <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+            <div style="flex:1;min-width:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-left:25px;box-sizing:border-box">
+              <sc-if value="{{ stNoCrop }}" hint-placeholder-val="{{ true }}">
+                <div style="width:200px;height:200px;border:2px dashed #d9cdba;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;box-sizing:border-box;color:#7a6f61;font-size:13px;font-weight:600">Paste (Ctrl/Cmd+V) an image to create a new layer.</div>
+              </sc-if>
+              <sc-if value="{{ stHasCrop }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ stZoomWrapStyle }}">
               <div style="{{ stOuterStyle }}">
                 <div style="{{ stViewportStyle }}" ref="{{ stCropRef }}" onPointerDown="{{ stOnCropDown }}" onPointerMove="{{ stOnCropMove }}" onPointerUp="{{ stOnCropUp }}" onPointerCancel="{{ stOnCropUp }}">
                   <div style="{{ stClipStyle }}">
-                    <div style="{{ stWrapStyle }}">
-                      <div style="{{ stImgStyle }}"></div>
-                    </div>
-                    <sc-for list="{{ stFillRects }}" as="fr" hint-placeholder-count="0">
-                      <div style="{{ fr.style }}"></div>
+                    <sc-for list="{{ stCanvasLayers }}" as="cl" hint-placeholder-count="0">
+                      <div style="{{ cl.imgStyle }}"></div>
                     </sc-for>
                     <sc-if value="{{ stHasSelectRect }}" hint-placeholder-val="{{ false }}">
                       <div style="{{ stSelectRectStyle }}"></div>
+                    </sc-if>
+                    <sc-if value="{{ stHasLassoSelect }}" hint-placeholder-val="{{ false }}">
+                      <svg width="200" height="200" style="position:absolute;left:0;top:0;pointer-events:none">
+                        <path d="{{ stLassoPathD }}" fill="rgba(255,255,255,0.12)" stroke="#000" stroke-width="1.5" stroke-dasharray="6 4" style="animation:ccMarchAntsPath 0.5s linear infinite"></path>
+                      </svg>
                     </sc-if>
                     <div style="{{ stCrosshairHStyle }}"></div>
                     <div style="{{ stCrosshairVStyle }}"></div>
@@ -660,86 +760,119 @@ input,select,button,textarea{font-family:inherit}
                   </sc-if>
                 </div>
               </div>
+              </div>
+              </sc-if>
             </div>
 
-            <div style="flex:1;min-width:260px;display:flex;flex-direction:column;gap:14px;background:#fff;border:1px solid #e6dccd;border-radius:12px;padding:12px;box-sizing:border-box">
-              <div style="width:100%;display:flex;flex-direction:column;gap:10px;box-sizing:border-box">
-                <div style="font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#7a6f61">Move / Transform</div>
-                <div style="font-size:12px;color:#7a6f61;line-height:1.4">Drag the image to move it. Click the image once to switch the corner handles between resize (↔) and rotate (↻), then drag a handle. Hold Shift while resizing to lock aspect ratio.</div>
+            <div style="width:190px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;background:#fff;border:1px solid #e6dccd;border-radius:12px;padding:12px;box-sizing:border-box">
+              <div style="font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#7a6f61">Layers</div>
+              <sc-if value="{{ stHasLayers }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <sc-for list="{{ stLayerItems }}" as="ly" hint-placeholder-count="0">
+                  <div onClick="{{ ly.onSelect }}" draggable="{{ ly.draggable }}" onDragStart="{{ ly.onDragStart }}" onDragOver="{{ ly.onDragOver }}" onDrop="{{ ly.onDrop }}" onDragEnd="{{ ly.onDragEnd }}" style="{{ ly.wrapStyle }}" style-hover="background:#f7f2e9">
+                    <div style="{{ ly.thumbStyle }}"></div>
+                    <div style="flex:1;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ly.name }}</div>
+                    <button onClick="{{ ly.onToggleVisible }}" title="Toggle visibility" style="{{ ly.eyeBtnStyle }}">👁<span style="{{ ly.eyeXStyle }}">✕</span></button>
+                    <button onClick="{{ ly.onDelete }}" title="Delete layer" style="{{ ly.deleteBtnStyle }}">🗑</button>
+                  </div>
+                </sc-for>
               </div>
-
-              <div style="width:100%;display:flex;flex-direction:column;gap:10px;box-sizing:border-box;border-top:1px solid #e6dccd;padding-top:12px">
-                <div style="font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#7a6f61">Fill Area</div>
-                <div style="font-size:12px;color:#7a6f61">Drag a box over the area to fill.</div>
-                <div style="display:flex;gap:8px;align-items:center;width:100%">
-                  <input type="color" value="{{ stFillColorHex }}" onChange="{{ stOnFillColorPick }}" style="width:30px;height:30px;padding:0;border:none;background:none;cursor:pointer">
-                  <input type="text" value="{{ stFillColorText }}" onChange="{{ stOnFillColorText }}" placeholder="#ffffff or rgb(255,255,255)" style="flex:1;padding:7px 8px;border:1px solid #d9cdba;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace">
-                </div>
-                <button onClick="{{ stArmFill }}" style="{{ stArmFillStyle }}">{{ stArmFillLabel }}</button>
-              </div>
-
-              <div style="display:flex;gap:8px">
-                <button onClick="{{ stUndo }}" disabled="{{ stUndoDisabled }}" title="Undo (Ctrl+Z)" style="{{ stUndoStyle }}">↶</button>
-                <button onClick="{{ stRedo }}" disabled="{{ stRedoDisabled }}" title="Redo (Ctrl+Y)" style="{{ stRedoStyle }}">↷</button>
-              </div>
-
-              <div style="display:flex;justify-content:flex-end">
-                <button onClick="{{ stSave }}" disabled="{{ stSaveDisabled }}" style="{{ stSaveStyle }}">Save Thumbnail</button>
-              </div>
+              </sc-if>
+              <sc-if value="{{ stNoLayers }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:11px;color:#a0958a">No layers yet. Paste (Ctrl/Cmd+V) an image to add one.</div>
+              </sc-if>
             </div>
           </div>
-        </sc-if>
+          <div style="display:flex;justify-content:center;padding-top:16px">
+            <button onClick="{{ stSave }}" disabled="{{ stSaveDisabled }}" style="{{ stSaveStyle }}">Save Thumbnail</button>
+          </div>
+        </div>
       </div>
     </section>
     </sc-if>
 
     <sc-if value="{{ cropOpen }}" hint-placeholder-val="{{ false }}">
       <div style="position:fixed;inset:0;background:rgba(28,24,20,0.6);display:flex;align-items:center;justify-content:center;z-index:50">
-        <div style="background:#e4ded2;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;align-items:center;width:400px;max-width:calc(100vw - 40px)">
+        <div style="background:#e4ded2;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;width:760px;max-width:calc(100vw - 40px);box-sizing:border-box">
           <div style="font-weight:800;font-size:15px">Edit thumbnail</div>
-          <div style="display:flex;gap:6px;width:100%">
-            <button onClick="{{ setToolTransform }}" style="{{ transformToolStyle }}">⤢ Transform</button>
-            <button onClick="{{ setToolFill }}" style="{{ fillToolStyle }}">▭ Fill area</button>
-          </div>
-          <sc-if value="{{ isTransformTool }}" hint-placeholder-val="{{ true }}">
-            <div style="font-size:11px;color:#7a6f61;text-align:center;line-height:1.4">Drag the image to move it. Click the image once to switch the corner handles between resize (↔) and rotate (↻), then drag a handle. Hold Shift while resizing to lock aspect ratio.</div>
-          </sc-if>
-          <div style="font-size:10.5px;color:#a0958a;text-align:center">Paste an image (Ctrl/Cmd+V) to replace it.</div>
-          <sc-if value="{{ isFillTool }}" hint-placeholder-val="{{ false }}">
-            <div style="font-size:12px;color:#7a6f61;text-align:center">Drag a box over the area to fill.</div>
-            <div style="display:flex;gap:8px;align-items:center;width:100%">
-              <input type="color" value="{{ fillColorHex }}" onChange="{{ onFillColorPick }}" style="width:30px;height:30px;padding:0;border:none;background:none;cursor:pointer">
-              <input type="text" value="{{ fillColorText }}" onChange="{{ onFillColorText }}" placeholder="#ffffff or rgb(255,255,255)" style="flex:1;padding:7px 8px;border:1px solid #d9cdba;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-bottom:1px solid #d9cdba;padding-bottom:14px">
+            <button onClick="{{ setToolTransform }}" title="Select / Move tool" style="{{ cropSelectBtnStyle }}"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 2 L4 19 L8.5 15.5 L11.5 21.5 L14.5 20 L11.5 14 L17.5 14 Z" fill="currentColor"></path></svg></button>
+            <button onClick="{{ setToolFill }}" title="Fill area tool" style="{{ cropFillBtnStyle }}"><svg width="18" height="18" viewBox="0 0 24 24"><g transform="rotate(135 12 12)"><rect x="7" y="2" width="10" height="5.5" rx="1.5" fill="currentColor"></rect><rect x="11" y="7.5" width="2" height="7" fill="currentColor"></rect><rect x="9.3" y="14.5" width="5.4" height="3" rx="0.8" fill="currentColor"></rect><rect x="10.5" y="17.3" width="3" height="4.7" rx="1" fill="currentColor"></rect></g></svg></button>
+            <button onClick="{{ cropSetMarquee }}" title="Selection tool" style="{{ cropMarqueeBtnStyle }}"><svg width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"></rect></svg></button>
+            <button onClick="{{ cropSetLasso }}" title="Freehand selection tool" style="{{ cropLassoBtnStyle }}"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 13c-1.5-4.5 2.5-9 8-9s9.5 3.5 8 8-6 6.5-11 5c-2.5-.7-3.5-1.2-3-2.5.5-1.2 3-1 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.2" stroke-linecap="round"></path></svg></button>
+            <button onClick="{{ cropDeleteSelection }}" disabled="{{ cropDeleteSelectionDisabled }}" title="Delete selected area" style="{{ cropDeleteSelectionStyle }}">🗑</button>
+            <div style="position:relative">
+              <button onClick="{{ cropToggleColorPicker }}" title="Fill color" style="{{ cropColorSwatchStyle }}"></button>
+              <sc-if value="{{ cropColorPickerOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:38px;left:0;z-index:10;background:#fff;border:1px solid #d9cdba;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;box-shadow:0 6px 18px rgba(0,0,0,0.18);width:190px">
+                  <input type="color" value="{{ fillColorHex }}" onChange="{{ onFillColorPick }}" style="width:100%;height:34px;padding:0;border:none;background:none;cursor:pointer">
+                  <input type="text" value="{{ fillColorText }}" onChange="{{ onFillColorText }}" placeholder="#ffffff or rgb(255,255,255)" style="padding:7px 8px;border:1px solid #d9cdba;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace">
+                </div>
+              </sc-if>
             </div>
-            <button onClick="{{ undoFill }}" disabled="{{ noFills }}" style="width:100%;border:1px solid #d9cdba;background:#fff;border-radius:6px;padding:7px;font-size:12px;font-weight:600;cursor:pointer">Undo last fill</button>
-          </sc-if>
-          <div style="display:flex;gap:8px">
+            <div style="width:1px;align-self:stretch;background:#d9cdba"></div>
             <button onClick="{{ cropUndo }}" disabled="{{ cropUndoDisabled }}" title="Undo (Ctrl+Z)" style="{{ cropUndoStyle }}">↶</button>
             <button onClick="{{ cropRedo }}" disabled="{{ cropRedoDisabled }}" title="Redo (Ctrl+Y)" style="{{ cropRedoStyle }}">↷</button>
+            <div style="width:1px;align-self:stretch;background:#d9cdba"></div>
+            <button onClick="{{ cropZoomOut }}" disabled="{{ cropZoomOutDisabled }}" title="Zoom out (-)" style="{{ cropZoomOutStyle }}">−</button>
+            <button onClick="{{ cropZoomIn }}" disabled="{{ cropZoomInDisabled }}" title="Zoom in (+)" style="{{ cropZoomInStyle }}">+</button>
+            <button onClick="{{ cropZoomReset }}" title="Reset to default view" style="{{ cropZoomResetStyle }}">Default view</button>
+            <span style="font-size:11px;color:#7a6f61;font-family:'IBM Plex Mono',monospace">{{ cropZoomLabel }}</span>
+            <label title="Import image as new layer" style="margin-left:auto;cursor:pointer;display:flex;align-items:center;gap:6px;border:1px solid #c7c2b8;background:#f0efec;color:#4a4238;border-radius:6px;padding:0 12px;height:36px;font-size:12px;font-weight:700" style-hover="border-color:#e85d1f;color:#e85d1f">
+              <svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 3v12M12 15l-4-4M12 15l4-4M4 19h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              Import Image
+              <input type="file" accept="image/*" onChange="{{ cropOnUpload }}" style="display:none">
+            </label>
           </div>
-          <div style="{{ cropOuterStyle }}">
-            <div style="{{ cropViewportStyle }}" ref="{{ cropRef }}" onPointerDown="{{ onCropDown }}" onPointerMove="{{ onCropMove }}" onPointerUp="{{ onCropUp }}" onPointerCancel="{{ onCropUp }}">
-              <div style="{{ cropClipStyle }}">
-                <div style="{{ cropWrapStyle }}">
-                  <div style="{{ cropImgStyle }}"></div>
+
+          <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+            <div style="flex:1;min-width:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-left:25px;box-sizing:border-box">
+              <div style="{{ cropZoomWrapStyle }}">
+              <div style="{{ cropOuterStyle }}">
+                <div style="{{ cropViewportStyle }}" ref="{{ cropRef }}" onPointerDown="{{ onCropDown }}" onPointerMove="{{ onCropMove }}" onPointerUp="{{ onCropUp }}" onPointerCancel="{{ onCropUp }}">
+                  <div style="{{ cropClipStyle }}">
+                    <sc-for list="{{ cropCanvasLayers }}" as="cl" hint-placeholder-count="0">
+                      <div style="{{ cl.imgStyle }}"></div>
+                    </sc-for>
+                    <sc-if value="{{ hasSelectRect }}" hint-placeholder-val="{{ false }}">
+                      <div style="{{ selectRectStyle }}"></div>
+                    </sc-if>
+                    <sc-if value="{{ hasLassoSelect }}" hint-placeholder-val="{{ false }}">
+                      <svg width="200" height="200" style="position:absolute;left:0;top:0;pointer-events:none">
+                        <path d="{{ lassoPathD }}" fill="rgba(255,255,255,0.12)" stroke="#000" stroke-width="1.5" stroke-dasharray="6 4" style="animation:ccMarchAntsPath 0.5s linear infinite"></path>
+                      </svg>
+                    </sc-if>
+                    <div style="{{ cropCrosshairHStyle }}"></div>
+                    <div style="{{ cropCrosshairVStyle }}"></div>
+                  </div>
+                  <div style="{{ cropMarkerStyle }}"></div>
+                  <sc-if value="{{ isTransformTool }}" hint-placeholder-val="{{ true }}">
+                    <sc-for list="{{ handles }}" as="h" hint-placeholder-count="4">
+                      <div style="{{ h.style }}" onPointerDown="{{ h.onDown }}" title="{{ h.title }}">{{ h.icon }}</div>
+                    </sc-for>
+                  </sc-if>
                 </div>
-                <sc-for list="{{ fillRects }}" as="fr" hint-placeholder-count="0">
-                  <div style="{{ fr.style }}"></div>
-                </sc-for>
-                <sc-if value="{{ hasSelectRect }}" hint-placeholder-val="{{ false }}">
-                  <div style="{{ selectRectStyle }}"></div>
-                </sc-if>
-                <div style="{{ cropCrosshairHStyle }}"></div>
-                <div style="{{ cropCrosshairVStyle }}"></div>
               </div>
-              <div style="{{ cropMarkerStyle }}"></div>
-              <sc-if value="{{ isTransformTool }}" hint-placeholder-val="{{ true }}">
-                <sc-for list="{{ handles }}" as="h" hint-placeholder-count="4">
-                  <div style="{{ h.style }}" onPointerDown="{{ h.onDown }}" title="{{ h.title }}">{{ h.icon }}</div>
+              </div>
+            </div>
+
+            <div style="width:170px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;background:#fff;border:1px solid #e6dccd;border-radius:12px;padding:12px;box-sizing:border-box">
+              <div style="font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#7a6f61">Layers</div>
+              <sc-if value="{{ cropHasLayers }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <sc-for list="{{ cropLayerItems }}" as="ly" hint-placeholder-count="0">
+                  <div onClick="{{ ly.onSelect }}" draggable="{{ ly.draggable }}" onDragStart="{{ ly.onDragStart }}" onDragOver="{{ ly.onDragOver }}" onDrop="{{ ly.onDrop }}" onDragEnd="{{ ly.onDragEnd }}" style="{{ ly.wrapStyle }}" style-hover="background:#f7f2e9">
+                    <div style="{{ ly.thumbStyle }}"></div>
+                    <div style="flex:1;font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ly.name }}</div>
+                    <button onClick="{{ ly.onToggleVisible }}" title="Toggle visibility" style="{{ ly.eyeBtnStyle }}">👁<span style="{{ ly.eyeXStyle }}">✕</span></button>
+                    <button onClick="{{ ly.onDelete }}" title="Delete layer" style="{{ ly.deleteBtnStyle }}">🗑</button>
+                  </div>
                 </sc-for>
+              </div>
               </sc-if>
             </div>
           </div>
+
           <div style="display:flex;gap:8px;width:100%">
             <button onClick="{{ cropCancel }}" style="flex:1;border:1px solid #d9cdba;background:#fff;border-radius:7px;padding:10px;font-weight:600;font-size:13px;cursor:pointer">Cancel</button>
             <button onClick="{{ cropConfirm }}" style="flex:1;border:none;background:#1c1814;color:#fff;border-radius:7px;padding:10px;font-weight:700;font-size:13px;cursor:pointer">Update</button>
@@ -759,12 +892,15 @@ class Component extends DCLogic {
     tab: 'search', data: { cases: [] },
     builderCaseId: '', activeLevel: 0,
     selBinId: null, drag: null, hoverEdge: null,
-    mapCaseId: '', query: '',
+    mapCaseId: '', query: '', findEmpty: false,
     crop: null,
+    cropBinId: null, cropOverride: false, cropText: '',
+    cropLayers: [], cropLayerStash: {}, cropActiveLayerId: null, cropZoom: 1, cropColorPickerOpen: false, cropDragLayerIdx: null,
     refOn: false, refIdx: 0, refView: { scale: 1, offX: 0, offY: 0 }, refDrag: null,
     helpOpen: false, helpDemo: null, coordsOn: true, justCreatedBinId: null, showGhosts: true, dragLevelIdx: null, searchHoverIdx: -1, lastAllLevels: false,
     casePropsOpen: true,
-    stCrop: null, stHistory: [], stFuture: [], cropHistory: [], cropFuture: []
+    stCrop: null, stHistory: [], stFuture: [], cropHistory: [], cropFuture: [],
+    stLayers: [], stLayerStash: {}, stActiveLayerId: null, stZoom: 1, stColorPickerOpen: false, stDragLayerIdx: null
   };
   PAL = ['#e85d1f', '#2f7fb8', '#5f9440', '#9a5bc9', '#bf8a2a', '#c25577'];
   DEFAULT_ICON = 'data:image/png;base64,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6e///u+l5eVlaXJyUjp16hT99bOf/UwCIF1//fXSU089Jb388stF3/vKK6/Q7yn36wc/+IGUyWSkbDYrLS0tSePj49LMzIwUCASkdDpd9pq/9a1vSQCkD37wg9Lvf/976cyZM5IoivTXl7/8ZQmAdPz4cenf/u3fyv78j3/841I0GpW++MUvlv3M9ddfL62vr0uiKOZdQyaTka699lr6uc7OTum6666TdDod/bNbbrlFOnnyZN6zI7+++tWvlv2ZBoNBevTRR6Xbb79dAiD9+Mc/lv70pz9JL774onT27FkpkUhIoihKr7zyirR//37674aGhqTOzk76//fee68UDAaLnl8qlZJefvnlomuamZnZsXW4608QMt7LaDTioYcewpve9CZ84QtfwGWXXYa9e/fWdILMzs7izW9+M9bW1vDAAw/gLW95C3ieRyQSgc/nw0svvYRPfepT+Ku/+itIkoSbb74ZNpsN7e3tZXcuURTBMAyi0WhRKrOwf4P8/v3vfz/kcjmOHz+OSy+9FOFwGHNzc/j973+Pz3zmM/j85z+P8fFxPP744/jZz36GQ4cOIZlMYnFxEadOncK//Mu/4Pjx4/j2t7+NO++8M68Lked53H777Xj3u9+N4eFhKJVKOujmzJkz+MQnPoEf//jHuOqqq3DTTTfRuYqk/kPc2XvuuQeHDx+mOsaBQAAvvPAC3ve+99HMoNfrRTweR29vLzweD5RKJRYXF3HDDTfA6/XiwQcfxOte9zoEAgFYLBbMz8/jG9/4Bh566CGwLItPf/rTebI+JOtY2NO+k2oyuz4GIS9PFEVcffXVuP/++wEADz30EGZmZvJihc2O3q9+9atYW1vD/fffj3e9613Y2NigfdBqtRpHjhzBQw89BAC48847MTIyQgfal/vupaUlpFIpbGxsUJlMQp4MBoMlEwlerxf/+I//CLfbDa/XC5/PB6PRiJtuugm33norAODxxx/Hww8/jCNHjmBlZQWrq6tQqVR4/etfj/vuu49+ZmxsrKj56t3vfjduvvlmRKNRrK6uQhAE6PV6XHHFFfjwhz8MAHjyySexurqKnp4euN1uyOVyHDt2jKatX//612NjYwOpVApqtRpdXV246aabcMMNN9B7yqX4EPr8N77xDXi9Xtx111246aabkMlk6Gjpffv24d577wUAfOELX8CTTz6ZBwaW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';
@@ -829,58 +965,92 @@ class Component extends DCLogic {
     r = Math.max(0, r - amt); g = Math.max(0, g - amt); b = Math.max(0, b - amt);
     return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
   }
+  lightenColor(hex, amt) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return hex;
+    const n = parseInt(m[1], 16);
+    let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    r = Math.min(255, r + amt); g = Math.min(255, g + amt); b = Math.min(255, b + amt);
+    return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  }
   buildCaseScene(c, targetBin, hovered, minLvl) {
-    const rows = c.rows, cols = c.cols, N = c.levels.length;
-    const DX = 12, DY = 6, WALLH = 16, LEVELGAP = WALLH;
-    const covers = (b, r, col) => r >= b.row && r < b.row + (b.rowSpan || 1) && col >= b.col && col < b.col + (b.colSpan || 1);
+    return this.renderScene(c, { targetId: targetBin ? targetBin.id : null, hovered: !!hovered, minLvl: minLvl || 0, showEmpty: false });
+  }
+  buildCaseEmptyScene(c, hovered) {
+    return this.renderScene(c, { showEmpty: true, hovered: !!hovered });
+  }
+  renderScene(c, o) {
+    const N = c.levels.length;
+    const DX = 12, DY = 6, WALLH = 16;
     const proj = (col, row, z) => ({ x: (col - row) * DX, y: (col + row) * DY - z });
     const polyFace = (pts, color, extra) => {
       const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
-      const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-      const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
-      const pct = (v, min, span) => ((v - min) / span * 100).toFixed(2) + '%';
-      const poly = pts.map(p => pct(p.x, minX, w) + ' ' + pct(p.y, minY, h)).join(',');
-      return Object.assign({ position: 'absolute', left: minX + 'px', top: minY + 'px', width: w + 'px', height: h + 'px', background: color, clipPath: 'polygon(' + poly + ')' }, extra || {});
+      const mnX = Math.min(...xs), mxX = Math.max(...xs), mnY = Math.min(...ys), mxY = Math.max(...ys);
+      const w = Math.max(1, mxX - mnX), h = Math.max(1, mxY - mnY);
+      const pct = (v, mn, span) => ((v - mn) / span * 100).toFixed(2) + '%';
+      const poly = pts.map(p => pct(p.x, mnX, w) + ' ' + pct(p.y, mnY, h)).join(',');
+      return Object.assign({ position: 'absolute', left: mnX + 'px', top: mnY + 'px', width: w + 'px', height: h + 'px', background: color, clipPath: 'polygon(' + poly + ')' }, extra || {});
     };
     let minX = 0, maxX = 0, minY = 0, maxY = 0;
     const track = (p) => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); };
-    const levelZ = (li) => (N - 1 - li) * LEVELGAP;
-    const GAP = 0.12;
+    const levelZ = (li) => (N - 1 - li) * WALLH;
+    const GAP = 0.04;
+    const occ = Array.from({ length: N }, () => ({}));
+    c.bins.forEach(b => {
+      const lvls = (b.levels && b.levels.length) ? b.levels : [0];
+      lvls.forEach(li => {
+        if (!occ[li]) return;
+        for (let r = b.row; r < b.row + (b.rowSpan || 1); r++)
+          for (let cc = b.col; cc < b.col + (b.colSpan || 1); cc++) occ[li][r + '_' + cc] = b;
+      });
+    });
+    const at = (li, r, cc) => (occ[li] ? occ[li][r + '_' + cc] : null) || null;
     const items = [];
     for (let li = 0; li < N; li++) {
-      const levelBins = c.bins.filter(bn => (bn.levels || []).includes(li));
-      const z0 = levelZ(li), z1 = z0 + WALLH;
-      for (let r = 1; r <= rows; r++) for (let col = 1; col <= cols; col++) {
-        const bn = levelBins.find(b => covers(b, r, col));
-        if (!bn) continue;
-        const isTargetCell = bn.id === targetBin.id;
-        const isXray = !isTargetCell && li < minLvl;
-        const binTopLvl = Math.min(...(bn.levels || [li]));
-        const trueColor = this.levelColor(c, binTopLvl);
-        const color = hovered && isXray ? '#f2f2f0' : trueColor;
-        const opacity = hovered && isXray ? 0.28 : 1;
-        const glow = isTargetCell && hovered ? 'ccFlashColor 1.4s ease-in-out infinite' : 'none';
+      for (let r = 1; r <= c.rows; r++) for (let cc = 1; cc <= c.cols; cc++) {
+        const bn = at(li, r, cc);
+        if (!bn && !o.showEmpty) continue;
+        const x0 = cc - 1 + GAP, x1 = cc - GAP;
+        const y0 = r - 1 + GAP, y1 = r - GAP;
+        const z0 = levelZ(li), z1 = levelZ(li) + WALLH;
+        const A0 = proj(x0, y0, z1), B0 = proj(x1, y0, z1), C0 = proj(x0, y1, z1), D0 = proj(x1, y1, z1);
+        const B1 = proj(x1, y0, z0), C1 = proj(x0, y1, z0), D1 = proj(x1, y1, z0);
+        [A0, B0, C0, D0, B1, C1, D1].forEach(track);
+        let color, glowName = null, opacity = 1;
+        if (bn) {
+          const lvls = (bn.levels && bn.levels.length) ? bn.levels : [0];
+          const topLi = Math.min(...lvls);
+          const isMulti = lvls.length > 1;
+          const trueColor = isMulti ? this.lightenColor('#9a5bc9', topLi * 5) : this.levelColor(c, topLi);
+          const isTarget = !!(o.targetId && bn.id === o.targetId);
+          const isXray = o.showEmpty ? !!o.hovered : (o.hovered && !isTarget && (topLi < o.minLvl || (o.minLvl === 0 && topLi === 0)));
+          color = isXray ? '#f2f2f0' : trueColor;
+          opacity = isXray ? (o.showEmpty ? 0.16 : 0.28) : 1;
+          if (isTarget && o.hovered) glowName = 'ccFlashColor';
+        } else {
+          color = '#bfe8c4';
+          glowName = 'ccFlashG';
+        }
         const trans = 'opacity 0.35s ease, background 0.35s ease';
-        const A0 = proj(col - 1 + GAP, r - 1 + GAP, z1), B0 = proj(col - GAP, r - 1 + GAP, z1), C0 = proj(col - 1 + GAP, r - GAP, z1), D0 = proj(col - GAP, r - GAP, z1);
-        const Cb = proj(col - 1 + GAP, r - GAP, z0), Db = proj(col - GAP, r - GAP, z0), Bb = proj(col - GAP, r - 1 + GAP, z0);
-        [A0, B0, C0, D0, Cb, Db, Bb].forEach(track);
+        const face = (pts, col) => {
+          const st = polyFace(pts, col, { '--fc': col, opacity, transition: trans });
+          st.animation = glowName ? (glowName + ' 1.4s ease-in-out infinite') : 'none';
+          return st;
+        };
         items.push({
-          depth: r + col, lvl: li, kind: 'box',
-          topStyle: Object.assign(polyFace([A0, B0, D0, C0], color), { '--fc': color, animation: glow, opacity, transition: trans }),
-          frontStyle: Object.assign(polyFace([Cb, Db, D0, C0], this.darkenColor(color, 45)), { '--fc': this.darkenColor(color, 45), animation: glow, opacity, transition: trans }),
-          rightStyle: Object.assign(polyFace([Bb, Db, D0, B0], this.darkenColor(color, 25)), { '--fc': this.darkenColor(color, 25), animation: glow, opacity, transition: trans })
+          d: r + cc, zk: N - 1 - li, isBox: true,
+          topStyle: face([A0, B0, D0, C0], color),
+          frontStyle: face([C1, D1, D0, C0], this.darkenColor(color, 45)),
+          rightStyle: face([B1, D1, D0, B0], this.darkenColor(color, 25))
         });
       }
     }
-    items.sort((a, b) => (a.depth - b.depth) || (b.lvl - a.lvl));
+    items.sort((a, b) => (a.d - b.d) || (a.zk - b.zk));
     const padding = 20;
     const totalW = (maxX - minX) + padding * 2, totalH = (maxY - minY) + padding * 2;
     const shiftX = -minX + padding, shiftY = -minY + padding;
-    const shift = (st) => Object.assign({}, st, { left: (parseFloat(st.left) + shiftX) + 'px', top: (parseFloat(st.top) + shiftY) + 'px' });
-    items.forEach(it => {
-      it.topStyle = shift(it.topStyle); it.frontStyle = shift(it.frontStyle); it.rightStyle = shift(it.rightStyle);
-      it.isBox = true;
-    });
+    const shift = (st) => (!st || st.display === 'none') ? st : Object.assign({}, st, { left: (parseFloat(st.left) + shiftX) + 'px', top: (parseFloat(st.top) + shiftY) + 'px' });
+    items.forEach(it => { it.topStyle = shift(it.topStyle); it.frontStyle = shift(it.frontStyle); it.rightStyle = shift(it.rightStyle); });
     const fitScale = Math.min(215 / totalW, 205 / totalH);
     return {
       outerStyle: { position: 'absolute', left: '50%', top: '50%', width: totalW + 'px', height: totalH + 'px', transform: 'translate(-50%,-50%) scale(' + fitScale + ')', transformOrigin: 'center' },
@@ -1259,11 +1429,17 @@ class Component extends DCLogic {
       if (this.state.crop) {
         if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); this.cropUndo(); }
         else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); this.cropRedo(); }
+        else if (!e.ctrlKey && !e.metaKey && (k === '+' || k === '=')) { e.preventDefault(); this.cropZoomIn(); }
+        else if (!e.ctrlKey && !e.metaKey && k === '-') { e.preventDefault(); this.cropZoomOut(); }
+        else if ((k === 'delete' || k === 'backspace') && this.state.crop.select) { e.preventDefault(); this.cropDeleteSelection(); }
         return;
       }
       if (this.state.tab !== 'thumbeditor') return;
       if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); this.stUndo(); }
       else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); this.stRedo(); }
+      else if (!e.ctrlKey && !e.metaKey && (k === '+' || k === '=')) { e.preventDefault(); this.stZoomIn(); }
+      else if (!e.ctrlKey && !e.metaKey && k === '-') { e.preventDefault(); this.stZoomOut(); }
+      else if ((k === 'delete' || k === 'backspace') && this.state.stCrop && this.state.stCrop.select) { e.preventDefault(); this.stDeleteSelection(); }
     };
     window.addEventListener('keydown', this._stKeydown);
     this._pasteHandler = (e) => {
@@ -1299,15 +1475,8 @@ class Component extends DCLogic {
     if (this._scrollGuard) document.removeEventListener('change', this._scrollGuard, true);
   }
   pasteIntoCropModal(src) {
-    const cropSt = this.state.crop; if (!cropSt) return;
-    const img = new Image();
-    img.onload = () => {
-      const scale = Math.max(200 / img.width, 200 / img.height);
-      const w = img.width * scale, h = img.height * scale;
-      this.setState({ crop: { ...cropSt, img, w, h, cx: 100, cy: 100, rot: 0, dragging: null, fills: [], fillColor: cropSt.fillColor, select: null } });
-    };
-    img.onerror = () => this.toast("Couldn't load that image.");
-    img.src = src;
+    if (!this.state.crop) return;
+    this.cropLoadImage(src);
   }
   componentDidUpdate() {
     if (this.state.focusLevelNameIdx != null) {
@@ -1401,26 +1570,147 @@ class Component extends DCLogic {
     img.src = src;
   }
   openImageEditor(bin) {
-    const img = new Image();
-    img.onload = () => {
-      const scale = Math.max(200 / img.width, 200 / img.height);
-      const w = img.width * scale, h = img.height * scale;
-      this.setState({ crop: { binId: bin.id, img, w, h, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: Math.max(20, w * 0.1), dragging: null, tool: 'transform', fills: [], fillColor: '#ffffff', select: null, override: !!bin.thumbOverride, text: bin.thumbOverride ? (bin.thumbText || '') : (bin.label || '') } });
+    this.setState({ cropBinId: bin.id, cropOverride: !!bin.thumbOverride, cropText: bin.thumbOverride ? (bin.thumbText || '') : (bin.label || ''), cropLayers: [], cropLayerStash: {}, cropActiveLayerId: null, crop: null, cropHistory: [], cropFuture: [], cropZoom: 1 }, () => {
+      this.cropLoadImage(bin.image || this.DEFAULT_ICON);
+    });
+  }
+  cropLoadImage(src) {
+    const addContentLayer = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.max(200 / img.width, 200 / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        const newCrop = { img, w, h, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: Math.max(20, w * 0.1), dragging: null, tool: 'transform', fills: [], erasures: [], fillColor: '#ffffff', select: null };
+        const layers = this.state.cropLayers.slice();
+        const stash = { ...this.state.cropLayerStash };
+        if (this.state.cropActiveLayerId && this.state.crop) stash[this.state.cropActiveLayerId] = this.state.crop;
+        const id = 'cly' + Date.now() + Math.random().toString(36).slice(2, 6);
+        layers.push({ id, name: 'Layer ' + (layers.filter(l => !l.isBackground).length + 1), hidden: false });
+        this.setState({ crop: newCrop, cropActiveLayerId: id, cropLayers: layers, cropLayerStash: stash, cropHistory: [], cropFuture: [] });
+      };
+      img.onerror = () => this.toast("Couldn't load that image.");
+      img.src = src;
     };
-    img.onerror = () => this.toast("Couldn't load that image.");
-    img.src = bin.image || this.DEFAULT_ICON;
+    if (this.state.cropLayers.length === 0) {
+      const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
+      const cctx = cv.getContext('2d'); cctx.fillStyle = '#ffffff'; cctx.fillRect(0, 0, 200, 200);
+      const bgImg = new Image();
+      bgImg.onload = () => {
+        const bgId = 'cbg';
+        const bgCrop = { img: bgImg, w: 200, h: 200, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: 20, dragging: null, tool: 'transform', fills: [], erasures: [], fillColor: '#ffffff', select: null };
+        this.setState({ cropLayers: [{ id: bgId, name: 'Background', hidden: false, isBackground: true }], cropLayerStash: { [bgId]: bgCrop } }, () => addContentLayer());
+      };
+      bgImg.src = cv.toDataURL('image/png');
+    } else {
+      addContentLayer();
+    }
+  }
+  cropSelectLayer(id) {
+    if (id === this.state.cropActiveLayerId) return;
+    const stash = { ...this.state.cropLayerStash };
+    if (this.state.cropActiveLayerId && this.state.crop) stash[this.state.cropActiveLayerId] = this.state.crop;
+    const next = stash[id] || null;
+    delete stash[id];
+    this.setState({ crop: next, cropActiveLayerId: id, cropLayerStash: stash, cropHistory: [], cropFuture: [] });
+  }
+  cropDeleteLayer(id) {
+    const target = this.state.cropLayers.find(l => l.id === id);
+    if (target && target.isBackground) return;
+    const layers = this.state.cropLayers.filter(l => l.id !== id);
+    const stash = { ...this.state.cropLayerStash };
+    delete stash[id];
+    if (id === this.state.cropActiveLayerId) {
+      if (layers.length) {
+        const nextId = layers[layers.length - 1].id;
+        const nextCrop = stash[nextId] || null;
+        delete stash[nextId];
+        this.setState({ cropLayers: layers, cropLayerStash: stash, crop: nextCrop, cropActiveLayerId: nextId, cropHistory: [], cropFuture: [] });
+      } else {
+        this.setState({ cropLayers: [], cropLayerStash: {}, crop: null, cropActiveLayerId: null, cropHistory: [], cropFuture: [] });
+      }
+    } else {
+      this.setState({ cropLayers: layers, cropLayerStash: stash });
+    }
+  }
+  cropToggleLayerVisible(id) {
+    this.setState({ cropLayers: this.state.cropLayers.map(l => l.id === id ? { ...l, hidden: !l.hidden } : l) });
+  }
+  cropZoomIn() { this.setState(s => ({ cropZoom: Math.min(1.75, +(s.cropZoom + 0.25).toFixed(2)) })); }
+  cropZoomOut() { this.setState(s => ({ cropZoom: Math.max(1, +(s.cropZoom - 0.25).toFixed(2)) })); }
+  cropZoomReset() { this.setState({ cropZoom: 1 }); }
+  cropApply(newCrop) {
+    const prev = this.state.crop;
+    this.setState({ crop: newCrop, cropHistory: [...this.state.cropHistory, prev], cropFuture: [] });
+  }
+  cropDeleteSelection() {
+    const c2 = this.state.crop; if (!c2 || !c2.select) return;
+    const s = c2.select;
+    const entry = s.points ? { type: 'lasso', points: s.points } : { type: 'rect', x: s.x, y: s.y, w: s.w, h: s.h };
+    const erasures = (c2.erasures || []).concat([entry]);
+    this.cropApply({ ...c2, select: null, erasures });
   }
   CROP_MARGIN = 70;
   ST_MARGIN = 90;
   stLoadImage(src) {
-    const img = new Image();
-    img.onload = () => {
-      const scale = Math.max(200 / img.width, 200 / img.height);
-      const w = img.width * scale, h = img.height * scale;
-      this.setState({ stCrop: { img, w, h, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: Math.max(20, w * 0.1), dragging: null, tool: 'transform', fills: [], fillColor: '#ffffff', select: null, override: false, text: '' }, stHistory: [], stFuture: [] });
+    const addContentLayer = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.max(200 / img.width, 200 / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        const newCrop = { img, w, h, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: Math.max(20, w * 0.1), dragging: null, tool: 'transform', fills: [], erasures: [], fillColor: '#ffffff', select: null, override: false, text: '' };
+        const layers = this.state.stLayers.slice();
+        const stash = { ...this.state.stLayerStash };
+        if (this.state.stActiveLayerId && this.state.stCrop) stash[this.state.stActiveLayerId] = this.state.stCrop;
+        const id = 'ly' + Date.now() + Math.random().toString(36).slice(2, 6);
+        layers.push({ id, name: 'Layer ' + (layers.filter(l => !l.isBackground).length + 1), hidden: false });
+        this.setState({ stCrop: newCrop, stActiveLayerId: id, stLayers: layers, stLayerStash: stash, stHistory: [], stFuture: [] });
+      };
+      img.onerror = () => this.toast("Couldn't load that image.");
+      img.src = src;
     };
-    img.onerror = () => this.toast("Couldn't load that image.");
-    img.src = src;
+    if (this.state.stLayers.length === 0) {
+      const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
+      const cctx = cv.getContext('2d'); cctx.fillStyle = '#ffffff'; cctx.fillRect(0, 0, 200, 200);
+      const bgImg = new Image();
+      bgImg.onload = () => {
+        const bgId = 'bg';
+        const bgCrop = { img: bgImg, w: 200, h: 200, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: 20, dragging: null, tool: 'transform', fills: [], erasures: [], fillColor: '#ffffff', select: null, override: false, text: '' };
+        this.setState({ stLayers: [{ id: bgId, name: 'Background', hidden: false, isBackground: true }], stLayerStash: { [bgId]: bgCrop } }, () => addContentLayer());
+      };
+      bgImg.src = cv.toDataURL('image/png');
+    } else {
+      addContentLayer();
+    }
+  }
+  stToggleLayerVisible(id) {
+    this.setState({ stLayers: this.state.stLayers.map(l => l.id === id ? { ...l, hidden: !l.hidden } : l) });
+  }
+  stSelectLayer(id) {
+    if (id === this.state.stActiveLayerId) return;
+    const stash = { ...this.state.stLayerStash };
+    if (this.state.stActiveLayerId && this.state.stCrop) stash[this.state.stActiveLayerId] = this.state.stCrop;
+    const next = stash[id] || null;
+    delete stash[id];
+    this.setState({ stCrop: next, stActiveLayerId: id, stLayerStash: stash, stHistory: [], stFuture: [] });
+  }
+  stDeleteLayer(id) {
+    const target = this.state.stLayers.find(l => l.id === id);
+    if (target && target.isBackground) return;
+    const layers = this.state.stLayers.filter(l => l.id !== id);
+    const stash = { ...this.state.stLayerStash };
+    delete stash[id];
+    if (id === this.state.stActiveLayerId) {
+      if (layers.length) {
+        const nextId = layers[layers.length - 1].id;
+        const nextCrop = stash[nextId] || null;
+        delete stash[nextId];
+        this.setState({ stLayers: layers, stLayerStash: stash, stCrop: nextCrop, stActiveLayerId: nextId, stHistory: [], stFuture: [] });
+      } else {
+        this.setState({ stLayers: [], stLayerStash: {}, stCrop: null, stActiveLayerId: null, stHistory: [], stFuture: [] });
+      }
+    } else {
+      this.setState({ stLayers: layers, stLayerStash: stash });
+    }
   }
   stOnUpload(e) {
     const file = e.target.files && e.target.files[0]; if (!file) return;
@@ -1444,6 +1734,13 @@ class Component extends DCLogic {
     const prev = this.state.stCrop;
     this.setState({ stCrop: newCrop, stHistory: [...this.state.stHistory, prev], stFuture: [] });
   }
+  stDeleteSelection() {
+    const c2 = this.state.stCrop; if (!c2 || !c2.select) return;
+    const s = c2.select;
+    const entry = s.points ? { type: 'lasso', points: s.points } : { type: 'rect', x: s.x, y: s.y, w: s.w, h: s.h };
+    const erasures = (c2.erasures || []).concat([entry]);
+    this.stApply({ ...c2, select: null, erasures });
+  }
   cropUndo() {
     const h = this.state.cropHistory; if (!h.length) return;
     const prev = h[h.length - 1];
@@ -1464,6 +1761,9 @@ class Component extends DCLogic {
     const next = f[0];
     this.setState({ stCrop: next, stFuture: f.slice(1), stHistory: [...this.state.stHistory, this.state.stCrop] });
   }
+  stZoomIn() { this.setState(s => ({ stZoom: Math.min(1.75, +(s.stZoom + 0.25).toFixed(2)) })); }
+  stZoomOut() { this.setState(s => ({ stZoom: Math.max(1, +(s.stZoom - 0.25).toFixed(2)) })); }
+  stZoomReset() { this.setState({ stZoom: 1 }); }
   stOnHandleDown(corner, e) {
     e.preventDefault(); e.stopPropagation();
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
@@ -1471,21 +1771,45 @@ class Component extends DCLogic {
     this._stPre = c;
     if (c.handleMode === 'rotate') {
       const rect = this.stCropEl.getBoundingClientRect();
-      const p = { x: e.clientX - rect.left - this.ST_MARGIN, y: e.clientY - rect.top - this.ST_MARGIN };
+      const z = this.state.stZoom || 1;
+      const p = { x: (e.clientX - rect.left) / z - this.ST_MARGIN, y: (e.clientY - rect.top) / z - this.ST_MARGIN };
       const startAng = Math.atan2(p.y - c.cy, p.x - c.cx) * 180 / Math.PI;
       this.setState({ stCrop: { ...c, dragging: { type: 'rotate', startAng, startRot: c.rot } } });
     } else {
       this.setState({ stCrop: { ...c, dragging: { type: 'resize', corner, startCx: c.cx, startCy: c.cy, startW: c.w, startH: c.h, startRot: c.rot, minW: c.minW || 20 } } });
     }
   }
+  applyErasures(ctx, erasures) {
+    if (!erasures || !erasures.length) return;
+    ctx.save(); ctx.globalCompositeOperation = 'destination-out';
+    erasures.forEach(e => {
+      if (e.type === 'lasso' && e.points && e.points.length > 2) {
+        ctx.beginPath();
+        ctx.moveTo(e.points[0].x, e.points[0].y);
+        for (let i = 1; i < e.points.length; i++) ctx.lineTo(e.points[i].x, e.points[i].y);
+        ctx.closePath(); ctx.fill();
+      } else {
+        ctx.fillRect(e.x, e.y, e.w, e.h);
+      }
+    });
+    ctx.restore();
+  }
   async stSave() {
-    const c2 = this.state.stCrop; if (!c2) return;
+    const c2 = this.state.stCrop; if (!c2 && !this.state.stLayers.length) return;
     const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
     const ctx = cv.getContext('2d');
-    ctx.save(); ctx.translate(c2.cx, c2.cy); ctx.rotate(c2.rot * Math.PI / 180);
-    ctx.drawImage(c2.img, -c2.w / 2, -c2.h / 2, c2.w, c2.h);
-    ctx.restore();
-    (c2.fills || []).forEach(f => { ctx.fillStyle = f.color; ctx.fillRect(f.x, f.y, f.w, f.h); });
+    const drawLayer = (lc) => {
+      if (!lc) return;
+      const tmp = document.createElement('canvas'); tmp.width = 200; tmp.height = 200;
+      const tctx = tmp.getContext('2d');
+      tctx.save(); tctx.translate(lc.cx, lc.cy); tctx.rotate(lc.rot * Math.PI / 180);
+      tctx.drawImage(lc.img, -lc.w / 2, -lc.h / 2, lc.w, lc.h);
+      tctx.restore();
+      (lc.fills || []).forEach(f => { tctx.fillStyle = f.color; tctx.fillRect(f.x, f.y, f.w, f.h); });
+      this.applyErasures(tctx, lc.erasures);
+      ctx.drawImage(tmp, 0, 0);
+    };
+    this.state.stLayers.filter(l => !l.hidden).forEach(l => drawLayer(l.id === this.state.stActiveLayerId ? c2 : this.state.stLayerStash[l.id]));
     cv.toBlob(async (blob) => {
       const filename = 'thumbnail.png';
       if (window.showSaveFilePicker) {
@@ -1510,7 +1834,8 @@ class Component extends DCLogic {
     const c = this.state.crop; if (!c) return;
     if (c.handleMode === 'rotate') {
       const rect = this.cropEl.getBoundingClientRect();
-      const p = { x: e.clientX - rect.left - this.CROP_MARGIN, y: e.clientY - rect.top - this.CROP_MARGIN };
+      const z = this.state.cropZoom || 1;
+      const p = { x: (e.clientX - rect.left) / z - this.CROP_MARGIN, y: (e.clientY - rect.top) / z - this.CROP_MARGIN };
       const startAng = Math.atan2(p.y - c.cy, p.x - c.cx) * 180 / Math.PI;
       this.setState({ crop: { ...c, dragging: { type: 'rotate', startAng, startRot: c.rot } } });
     } else {
@@ -1606,7 +1931,9 @@ class Component extends DCLogic {
         if (cs2) this.removeBin(cs2, dc.binId);
         this.setState({ deleteConfirm: null });
       },
-      query: st.query, onQuery: (e) => this.setState({ query: e.target.value }),
+      query: st.query, onQuery: (e) => this.setState({ query: e.target.value, findEmpty: false }),
+      hasQuery: !!st.query, onClearQuery: () => this.setState({ query: '', findEmpty: false }),
+      onFindEmpty: () => this.setState({ query: '', findEmpty: true }),
       mapCases, mapHasCases: mapCases.length > 0, mapNoCases: mapCases.length === 0,
       mapCaseId: mapCase ? mapCase.id : '',
       onMapCase: (e) => this.setState({ mapCaseId: e.target.value }),
@@ -1928,9 +2255,8 @@ class Component extends DCLogic {
         const rv = st.refView;
         vals.refViewportRef = (el) => { this.refEl = el; };
         vals.refViewportStyle = { width: '100%', height: '260px', borderRadius: '8px', overflow: 'hidden', position: 'relative', background: '#e9e2d4', touchAction: 'none', cursor: 'grab' };
-        vals.refSrc = curRef.src;
         vals.hasRefSrc = !!curRef.src;
-        vals.refImgStyle = { width: '100%', height: 'auto', transform: 'translate(' + rv.offX + 'px,' + rv.offY + 'px) scale(' + rv.scale + ')', transformOrigin: 'top center', display: 'block', pointerEvents: 'none', userSelect: 'none' };
+        vals.refImgStyle = { width: '100%', height: 'auto', minHeight: '100%', backgroundImage: 'url(' + curRef.src + ')', backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'top center', aspectRatio: (curRef.natW && curRef.natH) ? (curRef.natW + '/' + curRef.natH) : 'auto', transform: 'translate(' + rv.offX + 'px,' + rv.offY + 'px) scale(' + rv.scale + ')', transformOrigin: 'top center', display: 'block', pointerEvents: 'none', userSelect: 'none' };
         const FRAME_H = 260;
         const refBounds = (scale) => {
           const contW = (this.refEl && this.refEl.getBoundingClientRect().width) || 400;
@@ -1963,7 +2289,7 @@ class Component extends DCLogic {
         };
         vals.onRefUp = () => this.setState({ refDrag: null });
       } else {
-        Object.assign(vals, { refViewportRef: () => {}, refViewportStyle: { display: 'none' }, refSrc: '', hasRefSrc: false, refImgStyle: {}, onRefWheel: () => {}, onRefDown: () => {}, onRefMove: () => {}, onRefUp: () => {}, zoomIn: () => {}, zoomOut: () => {}, zoomReset: () => {} });
+        Object.assign(vals, { refViewportRef: () => {}, refViewportStyle: { display: 'none' }, hasRefSrc: false, refImgStyle: {}, onRefWheel: () => {}, onRefDown: () => {}, onRefMove: () => {}, onRefUp: () => {}, zoomIn: () => {}, zoomOut: () => {}, zoomReset: () => {} });
       }
       const si = st.selBinId;
       const selBin = si ? bins.find(b => b.id === si) : null;
@@ -2069,12 +2395,20 @@ class Component extends DCLogic {
         levelTabs: [], addLevel: () => {}, selHas: false, noSel: true, sel: {}, cfg: {},
         refName: '', onRefUpload: () => {}, refToggleLabel: 'Show reference', refToggleStyle: {}, toggleRefOn: () => {}, refDisabled: true,
         refShow: false, refHasMulti: false, refPrev: () => {}, refNext: () => {},
-        refViewportRef: () => {}, refViewportStyle: { display: 'none' }, refSrc: '', hasRefSrc: false, refImgStyle: {}, onRefWheel: () => {}, onRefDown: () => {}, onRefMove: () => {}, onRefUp: () => {}, zoomIn: () => {}, zoomOut: () => {}, zoomReset: () => {},
+        refViewportRef: () => {}, refViewportStyle: { display: 'none' }, hasRefSrc: false, refImgStyle: {}, onRefWheel: () => {}, onRefDown: () => {}, onRefMove: () => {}, onRefUp: () => {}, zoomIn: () => {}, zoomOut: () => {}, zoomReset: () => {},
         colHeaders: [], rowHeaders: [], colHeaderStyle: {}, rowHeaderStyle: {}, coordsOn: true, onCoordsOn: () => {},
         showGhosts: false, onShowGhosts: () => {}, ghostTiles: []
       });
     }
     vals.mapLevels = mapCase ? this.buildLevelViews(mapCase) : [];
+    const maxLevels = savedCases.reduce((n, c) => Math.max(n, c.levels.length), 1);
+    vals.legendItems = Array.from({ length: maxLevels }, (_, i) => ({
+      swatch: { width: '11px', height: '11px', borderRadius: '3px', background: this.PAL[i % this.PAL.length], display: 'inline-block' },
+      label: i === 0 ? 'Top Level' : 'Level ' + (i + 1)
+    })).concat([
+      { swatch: { width: '11px', height: '11px', borderRadius: '3px', background: '#9a5bc9', display: 'inline-block' }, label: 'Multi-Level Container' },
+      { swatch: { width: '11px', height: '11px', borderRadius: '3px', background: st.findEmpty ? '#2f9e44' : 'transparent', border: '1.5px solid #1c1814', display: 'inline-block' }, label: 'Empty Space' }
+    ]);
     const q = st.query.trim().toLowerCase();
     const hits = [];
     if (q) savedCases.forEach(c => c.bins.forEach(b => { if ((b.label || 'Unlabeled').toLowerCase().includes(q) || (b.notes || '').toLowerCase().includes(q)) hits.push({ c, b }); }));
@@ -2126,7 +2460,7 @@ class Component extends DCLogic {
         dot: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(c, b.levels[0] || 0), display: 'inline-block', flexShrink: 0 },
         hasNoteMatch: !!noteMatch, matchedNotesSnippet,
         thumb, grid, show3d, threeD,
-        onHoverOn: () => i < 3 && this.setState({ searchHoverIdx: i }),
+        onHoverOn: () => this.setState({ searchHoverIdx: i }),
         onHoverOff: () => this.setState(s => s.searchHoverIdx === i ? { searchHoverIdx: -1 } : null),
         go: () => this.setState({ tab: 'map', mapCaseId: c.id })
       };
@@ -2134,63 +2468,137 @@ class Component extends DCLogic {
     const totalBins = savedCases.reduce((n, c) => n + c.bins.length, 0);
     vals.searchEmpty = (!q && totalBins > 0) || (q && hits.length === 0) || totalBins === 0;
     vals.searchEmptyMsg = totalBins === 0 ? 'No bins yet — build a case first.' : (q ? 'No match for “' + st.query + '”.' : '');
+    vals.showEmptyResults = !!st.findEmpty;
+    vals.showNormalResults = !st.findEmpty;
+    const emptyResults = [];
+    if (st.findEmpty) {
+      savedCases.forEach(c => {
+        const coveredByLevel = c.levels.map(() => new Set());
+        c.bins.forEach(b => (b.levels || []).forEach(li => {
+          if (!coveredByLevel[li]) return;
+          for (let r = b.row; r < b.row + (b.rowSpan || 1); r++)
+            for (let cc = b.col; cc < b.col + (b.colSpan || 1); cc++) coveredByLevel[li].add(r + '_' + cc);
+        }));
+        const unionEmpty = new Set();
+        const emptyLevelOf = {};
+        const levels = [];
+        c.levels.forEach((lv, li) => {
+          const coords = [];
+          for (let r = 1; r <= c.rows; r++) for (let cc = 1; cc <= c.cols; cc++) {
+            const key = r + '_' + cc;
+            if (!coveredByLevel[li].has(key)) { coords.push(this.posLabel(c, { row: r, col: cc })); unionEmpty.add(key); if (!(key in emptyLevelOf)) emptyLevelOf[key] = li; }
+          }
+          if (coords.length) levels.push({
+            levelName: lv.name, coords: coords.join(', '),
+            dot: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(c, li), display: 'inline-block', flexShrink: 0 }
+          });
+        });
+        if (!levels.length) return;
+        const rows = c.rows, cols = c.cols;
+        const cellSize = Math.max(12, Math.min(22, Math.floor((130 - (rows - 1) * 2) / rows)));
+        const cells = [];
+        for (let r = 1; r <= rows; r++) for (let cc = 1; cc <= cols; cc++) cells.push({ style: { gridArea: r + ' / ' + cc, border: '1px solid #e6dccd', borderRadius: '2px', background: unionEmpty.has(r + '_' + cc) ? this.levelColor(c, emptyLevelOf[r + '_' + cc]) : '#efe9db' } });
+        const grid = {
+          colHeaders: Array.from({ length: cols }, (_, k) => ({ label: this.seqLabel(c.hIndex, k, cols), style: { textAlign: 'center', fontSize: '11px', fontWeight: 800, borderRadius: '2px', fontFamily: "'IBM Plex Mono',monospace", background: '#1c1814', color: '#fff' } })),
+          rowHeaders: Array.from({ length: rows }, (_, k) => ({ label: this.seqLabel(c.vIndex, k, rows), style: { textAlign: 'center', fontSize: '11px', fontWeight: 800, borderRadius: '2px', fontFamily: "'IBM Plex Mono',monospace", background: '#1c1814', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' } })),
+          colHeaderStyle: { display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',' + cellSize + 'px)', gap: '2px' },
+          rowHeaderStyle: { display: 'grid', gridTemplateRows: 'repeat(' + rows + ',' + cellSize + 'px)', gap: '2px' },
+          gridStyle: { display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',' + cellSize + 'px)', gridTemplateRows: 'repeat(' + rows + ',' + cellSize + 'px)', gap: '2px' },
+          cells
+        };
+        const eIdx = emptyResults.length;
+        emptyResults.push({
+          caseName: c.name, levels, grid,
+          threeD: this.buildCaseEmptyScene(c, st.emptyHoverIdx === eIdx),
+          onHoverOn: () => this.setState({ emptyHoverIdx: eIdx }),
+          onHoverOff: () => this.setState(s => s.emptyHoverIdx === eIdx ? { emptyHoverIdx: -1 } : null),
+          go: () => this.setState({ tab: 'map', mapCaseId: c.id })
+        });
+      });
+    }
+    vals.emptyResults = emptyResults;
+    vals.emptyResultsEmpty = st.findEmpty && emptyResults.length === 0;
     const crop = st.crop;
     vals.cropOpen = !!crop;
     if (crop) {
       const tool = crop.tool || 'transform';
       vals.isTransformTool = tool === 'transform'; vals.isFillTool = tool === 'fill';
-      vals.transformToolStyle = { flex: 1, border: '1px solid ' + (tool === 'transform' ? '#e85d1f' : '#d9cdba'), background: tool === 'transform' ? '#e85d1f' : '#fff', color: tool === 'transform' ? '#fff' : '#1c1814', borderRadius: '6px', padding: '7px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' };
-      vals.fillToolStyle = { flex: 1, border: '1px solid ' + (tool === 'fill' ? '#e85d1f' : '#d9cdba'), background: tool === 'fill' ? '#e85d1f' : '#fff', color: tool === 'fill' ? '#fff' : '#1c1814', borderRadius: '6px', padding: '7px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' };
+      const cropToolBtnBase = { border: '1px solid #c7c2b8', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer' };
+      vals.cropSelectBtnStyle = { ...cropToolBtnBase, background: tool === 'transform' ? '#3a352c' : '#f0efec', color: tool === 'transform' ? '#fff' : '#4a4238' };
+      vals.cropFillBtnStyle = { ...cropToolBtnBase, background: tool === 'fill' ? '#3a352c' : '#f0efec', color: tool === 'fill' ? '#fff' : '#4a4238' };
+      vals.cropMarqueeBtnStyle = { ...cropToolBtnBase, background: tool === 'marquee' ? '#3a352c' : '#f0efec', color: tool === 'marquee' ? '#fff' : '#4a4238' };
+      vals.cropLassoBtnStyle = { ...cropToolBtnBase, background: tool === 'lasso' ? '#3a352c' : '#f0efec', color: tool === 'lasso' ? '#fff' : '#4a4238' };
       vals.setToolTransform = () => this.setState({ crop: { ...crop, tool: 'transform', dragging: null, select: null } });
       vals.setToolFill = () => this.setState({ crop: { ...crop, tool: 'fill', dragging: null, select: null } });
-      const liveBin = (this.getCase(this.state.builderCaseId) || { bins: [] }).bins.find(b => b.id === crop.binId);
-      const effText = crop.override ? (crop.text || '') : ((liveBin && liveBin.label) || crop.text || '');
-      vals.overrideChecked = !!crop.override;
-      vals.onToggleOverride = (e) => {
-        const on = e.target.checked;
-        this.setState({ crop: { ...crop, override: on, text: on ? (crop.text || (liveBin && liveBin.label) || '') : crop.text } });
-      };
-      vals.textValue = effText;
-      vals.textDisabled = !crop.override;
-      vals.textAreaBg = crop.override ? '#fff' : '#f2ede4';
-      vals.onTextChange = (e) => this.setState({ crop: { ...crop, text: e.target.value } });
-      vals.resetThumbText = () => this.setState({ crop: { ...crop, override: false, text: (liveBin && liveBin.label) || '' } });
-      const previewLines = this.wrapThumbText(effText);
-      vals.hasPreviewText = previewLines.length > 0;
-      vals.previewTextLine1 = previewLines[0] || ''; vals.previewTextLine2 = previewLines[1] || '';
-      vals.previewTextStyle = { position: 'absolute', bottom: '8px', right: '12px', left: '12px', textAlign: 'right', color: '#000', fontFamily: "'Roboto Condensed',sans-serif", fontWeight: 700, fontSize: '26px', lineHeight: '1.25', textShadow: '0 0 3px #fff, 0 0 3px #fff', pointerEvents: 'none', overflow: 'hidden' };
-      vals.cropOuterStyle = { position: 'relative', width: (200 + 2 * this.CROP_MARGIN) + 'px', height: (200 + 2 * this.CROP_MARGIN) + 'px' };
-      vals.cropViewportStyle = { position: 'relative', width: '100%', height: '100%', touchAction: 'none', cursor: tool === 'fill' ? 'crosshair' : 'grab' };
-      vals.cropMarkerStyle = { position: 'absolute', left: this.CROP_MARGIN + 'px', top: this.CROP_MARGIN + 'px', width: '200px', height: '200px', border: '2px dashed #9a9a9a', borderRadius: '8px', pointerEvents: 'none', boxShadow: '0 0 0 1px #fff' };
-      vals.cropClipStyle = { position: 'absolute', left: this.CROP_MARGIN + 'px', top: this.CROP_MARGIN + 'px', width: '200px', height: '200px', overflow: 'hidden', borderRadius: '8px', background: '#fff' };
-      vals.cropWrapStyle = { position: 'absolute', left: crop.cx + 'px', top: crop.cy + 'px', width: '0', height: '0', transform: 'rotate(' + crop.rot + 'deg)' };
-      vals.cropCrosshairHStyle = { position: 'absolute', left: 0, top: '100px', width: '200px', height: '1px', background: 'rgba(230,30,30,0.85)', pointerEvents: 'none', zIndex: 2 };
-      vals.cropCrosshairVStyle = { position: 'absolute', left: '100px', top: 0, width: '1px', height: '200px', background: 'rgba(230,30,30,0.85)', pointerEvents: 'none', zIndex: 2 };
-      vals.cropImgStyle = { position: 'absolute', left: (-crop.w / 2) + 'px', top: (-crop.h / 2) + 'px', width: crop.w + 'px', height: crop.h + 'px', backgroundImage: 'url(' + crop.img.src + ')', backgroundSize: '100% 100%' };
-      const fills = crop.fills || [];
-      vals.fillRects = fills.map((f, i) => ({ style: { position: 'absolute', left: f.x + 'px', top: f.y + 'px', width: f.w + 'px', height: f.h + 'px', background: f.color, pointerEvents: 'none' } }));
-      vals.noFills = fills.length === 0;
-      vals.undoFill = () => { const pre = crop; this.setState({ crop: { ...crop, fills: fills.slice(0, -1) }, cropHistory: [...this.state.cropHistory, pre], cropFuture: [] }); };
+      vals.cropSetMarquee = () => this.setState({ crop: { ...crop, tool: 'marquee', dragging: null, select: null } });
+      vals.cropSetLasso = () => this.setState({ crop: { ...crop, tool: 'lasso', dragging: null, select: null } });
+      vals.cropDeleteSelectionDisabled = !crop.select;
+      vals.cropDeleteSelection = () => this.cropDeleteSelection();
+      vals.cropDeleteSelectionStyle = { ...cropToolBtnBase, cursor: vals.cropDeleteSelectionDisabled ? 'not-allowed' : 'pointer', opacity: vals.cropDeleteSelectionDisabled ? 0.4 : 1, background: '#f0efec', color: '#c0392b' };
+      vals.cropColorPickerOpen = !!this.state.cropColorPickerOpen;
+      vals.cropToggleColorPicker = () => this.setState(s => ({ cropColorPickerOpen: !s.cropColorPickerOpen }));
+      vals.cropColorSwatchStyle = { width: '36px', height: '36px', borderRadius: '6px', border: '2px solid #1c1814', background: crop.fillColor || '#ffffff', cursor: 'pointer', padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' };
+      vals.cropOuterStyle2 = null;
       vals.cropUndo = () => this.cropUndo();
       vals.cropRedo = () => this.cropRedo();
       vals.cropUndoDisabled = this.state.cropHistory.length === 0;
       vals.cropRedoDisabled = this.state.cropFuture.length === 0;
-      const cropBtnBase = { border: '1px solid #d9cdba', background: '#fff', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' };
+      const cropBtnBase = { border: '1px solid #c7c2b8', background: '#f0efec', color: '#4a4238', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' };
       vals.cropUndoStyle = { ...cropBtnBase, opacity: vals.cropUndoDisabled ? 0.4 : 1, cursor: vals.cropUndoDisabled ? 'not-allowed' : 'pointer' };
       vals.cropRedoStyle = { ...cropBtnBase, opacity: vals.cropRedoDisabled ? 0.4 : 1, cursor: vals.cropRedoDisabled ? 'not-allowed' : 'pointer' };
       vals.fillColorHex = /^#[0-9a-f]{6}$/i.test(crop.fillColor) ? crop.fillColor : '#ffffff';
       vals.fillColorText = crop.fillColor || '#ffffff';
       vals.onFillColorPick = (e) => this.setState({ crop: { ...crop, fillColor: e.target.value } });
       vals.onFillColorText = (e) => { const v = e.target.value; if (this.validColor(v)) this.setState({ crop: { ...crop, fillColor: v } }); else this.toast('Not a recognized color — use hex (#rrggbb) or rgb(r,g,b).'); };
-      vals.hasSelectRect = !!crop.select;
-      if (crop.select) {
+      const cropZoom = this.state.cropZoom || 1;
+      const CM = this.CROP_MARGIN;
+      vals.cropZoomWrapStyle = { width: (200 + 2 * CM) + 'px', height: (200 + 2 * CM) + 'px', overflow: 'hidden', position: 'relative' };
+      vals.cropOuterStyle = { position: 'absolute', left: '50%', top: '50%', width: (200 + 2 * CM) + 'px', height: (200 + 2 * CM) + 'px', transform: 'translate(-50%,-50%) scale(' + cropZoom + ')', transformOrigin: 'center' };
+      vals.cropZoomLabel = Math.round(cropZoom * 100) + '%';
+      vals.cropZoomInDisabled = cropZoom >= 1.75;
+      vals.cropZoomOutDisabled = cropZoom <= 1;
+      vals.cropZoomIn = () => this.cropZoomIn();
+      vals.cropZoomOut = () => this.cropZoomOut();
+      vals.cropZoomReset = () => this.cropZoomReset();
+      const cropZoomBtnBase = { border: '1px solid #c7c2b8', background: '#f0efec', color: '#4a4238', borderRadius: '6px', width: '36px', height: '36px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 };
+      vals.cropZoomInStyle = { ...cropZoomBtnBase, opacity: vals.cropZoomInDisabled ? 0.4 : 1, cursor: vals.cropZoomInDisabled ? 'not-allowed' : 'pointer' };
+      vals.cropZoomOutStyle = { ...cropZoomBtnBase, opacity: vals.cropZoomOutDisabled ? 0.4 : 1, cursor: vals.cropZoomOutDisabled ? 'not-allowed' : 'pointer' };
+      vals.cropZoomResetStyle = { border: '1px solid #c7c2b8', background: '#f0efec', color: '#4a4238', borderRadius: '6px', padding: '0 10px', height: '36px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center' };
+      vals.cropViewportStyle = { position: 'relative', width: '100%', height: '100%', touchAction: 'none', cursor: (tool === 'fill' || tool === 'marquee' || tool === 'lasso') ? 'crosshair' : 'grab' };
+      vals.cropMarkerStyle = { position: 'absolute', left: CM + 'px', top: CM + 'px', width: '200px', height: '200px', border: '2px dashed #9a9a9a', borderRadius: '8px', pointerEvents: 'none', boxShadow: '0 0 0 1px #fff' };
+      vals.cropClipStyle = { position: 'absolute', left: CM + 'px', top: CM + 'px', width: '200px', height: '200px', overflow: 'hidden', borderRadius: '8px', background: 'repeating-conic-gradient(#e2ded4 0% 25%, #fff 0% 50%) 0 0/16px 16px' };
+      vals.cropCrosshairHStyle = { position: 'absolute', left: 0, top: '100px', width: '200px', height: '1px', background: 'rgba(230,30,30,0.85)', pointerEvents: 'none', zIndex: 2 };
+      vals.cropCrosshairVStyle = { position: 'absolute', left: '100px', top: 0, width: '1px', height: '200px', background: 'rgba(230,30,30,0.85)', pointerEvents: 'none', zIndex: 2 };
+      vals.cropCanvasLayers = this.state.cropLayers.filter(l => !l.hidden).map(l => {
+        const lc = l.id === this.state.cropActiveLayerId ? crop : this.state.cropLayerStash[l.id];
+        if (!lc) return null;
+        const tmp = document.createElement('canvas'); tmp.width = 200; tmp.height = 200;
+        const tctx = tmp.getContext('2d');
+        tctx.save(); tctx.translate(lc.cx, lc.cy); tctx.rotate(lc.rot * Math.PI / 180);
+        tctx.drawImage(lc.img, -lc.w / 2, -lc.h / 2, lc.w, lc.h);
+        tctx.restore();
+        (lc.fills || []).forEach(f => { tctx.fillStyle = f.color; tctx.fillRect(f.x, f.y, f.w, f.h); });
+        this.applyErasures(tctx, lc.erasures);
+        return { imgStyle: { position: 'absolute', left: '0px', top: '0px', width: '200px', height: '200px', backgroundImage: 'url(' + tmp.toDataURL('image/png') + ')', backgroundSize: '100% 100%' } };
+      }).filter(Boolean);
+      vals.hasSelectRect = !!(crop.select && !crop.select.points);
+      if (crop.select && !crop.select.points) {
         const s = crop.select;
-        const x = Math.min(s.x0, s.x), y = Math.min(s.y0, s.y), w = Math.abs(s.x - s.x0), h = Math.abs(s.y - s.y0);
-        vals.selectRectStyle = { position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', background: 'rgba(232,93,31,0.25)', border: '1px dashed #e85d1f', pointerEvents: 'none' };
+        const x = s.w != null ? s.x : Math.min(s.x0, s.x), y = s.w != null ? s.y : Math.min(s.y0, s.y), w = s.w != null ? s.w : Math.abs(s.x - s.x0), h = s.h != null ? s.h : Math.abs(s.y - s.y0);
+        vals.selectRectStyle = {
+          position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', pointerEvents: 'none',
+          background: 'repeating-linear-gradient(90deg,#000 0 6px,#fff 6px 12px),repeating-linear-gradient(90deg,#000 0 6px,#fff 6px 12px),repeating-linear-gradient(0deg,#000 0 6px,#fff 6px 12px),repeating-linear-gradient(0deg,#000 0 6px,#fff 6px 12px),rgba(255,255,255,0.12)',
+          backgroundSize: '12px 2px,12px 2px,2px 12px,2px 12px,100% 100%',
+          backgroundPosition: '0 0,0 100%,0 0,100% 0,0 0',
+          backgroundRepeat: 'repeat-x,repeat-x,repeat-y,repeat-y,no-repeat',
+          animation: 'ccMarchAnts 0.6s linear infinite'
+        };
       } else vals.selectRectStyle = { display: 'none' };
+      vals.hasLassoSelect = !!(crop.select && crop.select.points && crop.select.points.length > 1);
+      vals.lassoPathD = vals.hasLassoSelect ? ('M' + crop.select.points.map(p => p.x + ' ' + p.y).join(' L') + ' Z') : '';
       const SIGNS = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
       const M = this.CROP_MARGIN;
-      const toViewport = (e) => { const r = this.cropEl.getBoundingClientRect(); return { x: e.clientX - r.left - M, y: e.clientY - r.top - M }; };
+      const toViewport = (e) => { const r = this.cropEl.getBoundingClientRect(); const z = this.state.cropZoom || 1; return { x: (e.clientX - r.left) / z - M, y: (e.clientY - r.top) / z - M }; };
       const toLocalClamped = (e) => { const p = toViewport(e); return { x: Math.min(200, Math.max(0, p.x)), y: Math.min(200, Math.max(0, p.y)) }; };
       vals.handles = crop.handleMode === 'rotate'
         ? SIGNS.map((s, i) => ({ icon: '↻', title: 'Drag to rotate', style: { position: 'absolute', left: (M + crop.cx + this.rotPt(s[0] * crop.w / 2, s[1] * crop.h / 2, crop.rot).x - 11) + 'px', top: (M + crop.cy + this.rotPt(s[0] * crop.w / 2, s[1] * crop.h / 2, crop.rot).y - 11) + 'px', width: '22px', height: '22px', borderRadius: '50%', background: '#fff', border: '2px solid #2f7fb8', color: '#2f7fb8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', cursor: 'grab', userSelect: 'none' }, onDown: (e) => this.onHandleDown(i, e) }))
@@ -2199,19 +2607,28 @@ class Component extends DCLogic {
         e.preventDefault();
         try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
         this._cropPre = crop;
-        if (tool === 'fill') {
+        if (tool === 'fill' || tool === 'marquee') {
           const p = toLocalClamped(e);
-          this.setState({ crop: { ...crop, select: { x0: p.x, y0: p.y, x: p.x, y: p.y } } });
+          this.setState({ crop: { ...crop, select: { x0: p.x, y0: p.y, x: p.x, y: p.y }, selecting: true } });
+        } else if (tool === 'lasso') {
+          const p = toLocalClamped(e);
+          this.setState({ crop: { ...crop, select: { points: [p] }, selecting: true } });
         } else {
           this.setState({ crop: { ...crop, dragging: { type: 'move', startX: e.clientX, startY: e.clientY, startCx: crop.cx, startCy: crop.cy, moved: false } } });
         }
       };
       vals.onCropMove = (e) => {
         const c2 = this.state.crop; if (!c2) return;
-        if ((c2.tool || 'transform') === 'fill') {
+        if (((c2.tool || 'transform') === 'fill' || (c2.tool || 'transform') === 'marquee') && c2.selecting) {
           if (!c2.select) return;
           const p = toLocalClamped(e);
           this.setState({ crop: { ...c2, select: { ...c2.select, x: p.x, y: p.y } } });
+          return;
+        }
+        if ((c2.tool || 'transform') === 'lasso' && c2.selecting) {
+          if (!c2.select) return;
+          const p = toLocalClamped(e);
+          this.setState({ crop: { ...c2, select: { points: c2.select.points.concat([p]) } } });
           return;
         }
         const d = c2.dragging; if (!d) return;
@@ -2241,9 +2658,28 @@ class Component extends DCLogic {
           const x = Math.min(s.x0, s.x), y = Math.min(s.y0, s.y), w = Math.abs(s.x - s.x0), h = Math.abs(s.y - s.y0);
           if (w > 3 && h > 3) {
             const fills = (c2.fills || []).concat([{ x, y, w, h, color: c2.fillColor || '#ffffff' }]);
-            this.setState({ crop: { ...c2, select: null, fills }, cropHistory: [...this.state.cropHistory, pre], cropFuture: [] });
+            this.setState({ crop: { ...c2, select: null, selecting: false, fills, tool: 'fill' }, cropHistory: [...this.state.cropHistory, pre], cropFuture: [] });
           } else {
-            this.setState({ crop: { ...c2, select: null } });
+            this.setState({ crop: { ...c2, select: null, selecting: false } });
+          }
+          return;
+        }
+        if ((c2.tool || 'transform') === 'marquee' && c2.select) {
+          const s = c2.select;
+          const x = Math.min(s.x0, s.x), y = Math.min(s.y0, s.y), w = Math.abs(s.x - s.x0), h = Math.abs(s.y - s.y0);
+          if (w > 3 && h > 3) {
+            this.setState({ crop: { ...c2, select: { x, y, w, h }, selecting: false } });
+          } else {
+            this.setState({ crop: { ...c2, select: null, selecting: false } });
+          }
+          return;
+        }
+        if ((c2.tool || 'transform') === 'lasso' && c2.select) {
+          const pts = c2.select.points;
+          if (pts.length > 2) {
+            this.setState({ crop: { ...c2, select: { points: pts }, selecting: false } });
+          } else {
+            this.setState({ crop: { ...c2, select: null, selecting: false } });
           }
           return;
         }
@@ -2258,30 +2694,68 @@ class Component extends DCLogic {
           this.setState({ crop: { ...c2, dragging: null } });
         }
       };
-      vals.cropCancel = () => this.setState({ crop: null });
+      vals.cropOnUpload = (e) => { const f = e.target.files && e.target.files[0]; if (!f) return; const reader = new FileReader(); reader.onload = () => this.cropLoadImage(reader.result); reader.readAsDataURL(f); };
+      vals.cropHasLayers = this.state.cropLayers.length > 0;
+      const cropDispOrder = this.state.cropLayers.slice().reverse();
+      const cropDragIdx = this.state.cropDragLayerIdx;
+      vals.cropLayerItems = cropDispOrder.map((l, di) => {
+        const isActive = l.id === this.state.cropActiveLayerId;
+        const lc = isActive ? crop : this.state.cropLayerStash[l.id];
+        const canDelete = !l.isBackground;
+        return {
+          id: l.id, name: l.name, isActive,
+          draggable: true,
+          wrapStyle: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px', borderRadius: '6px', cursor: 'grab', background: isActive ? '#f2ece1' : 'transparent', opacity: cropDragIdx === di ? 0.4 : 1 },
+          thumbStyle: { width: '32px', height: '32px', flexShrink: 0, borderRadius: '4px', background: lc && lc.img ? ('#fff url(' + lc.img.src + ') center/cover') : '#e6dccd', border: isActive ? '2px solid #1c1814' : '1px solid #d9cdba', boxSizing: 'border-box', opacity: l.hidden ? 0.35 : 1 },
+          eyeBtnStyle: { position: 'relative', border: 'none', background: 'transparent', color: '#7a6f61', fontSize: '14px', cursor: 'pointer', padding: '3px', lineHeight: 1, flexShrink: 0 },
+          eyeXStyle: { position: 'absolute', inset: 0, display: l.hidden ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center', color: '#c0392b', fontWeight: 900, fontSize: '14px', pointerEvents: 'none' },
+          deleteBtnStyle: { border: 'none', background: 'transparent', color: canDelete ? '#a0958a' : '#d9cdba', fontSize: '14px', cursor: canDelete ? 'pointer' : 'not-allowed', padding: '3px', lineHeight: 1, flexShrink: 0 },
+          onSelect: () => this.cropSelectLayer(l.id),
+          onDelete: (e) => { e.stopPropagation(); if (canDelete) this.cropDeleteLayer(l.id); },
+          onToggleVisible: (e) => { e.stopPropagation(); this.cropToggleLayerVisible(l.id); },
+          onDragStart: (e) => { try { e.dataTransfer.effectAllowed = 'move'; } catch (err) {} this.setState({ cropDragLayerIdx: di }); },
+          onDragOver: (e) => e.preventDefault(),
+          onDrop: (e) => {
+            e.preventDefault();
+            const from = this.state.cropDragLayerIdx;
+            if (from == null || from === di) return;
+            const order = cropDispOrder.slice();
+            const [moved] = order.splice(from, 1);
+            order.splice(di, 0, moved);
+            this.setState({ cropLayers: order.slice().reverse(), cropDragLayerIdx: null });
+          },
+          onDragEnd: () => this.setState({ cropDragLayerIdx: null })
+        };
+      });
+      vals.cropCancel = () => this.setState({ crop: null, cropLayers: [], cropLayerStash: {}, cropActiveLayerId: null });
       vals.cropConfirm = () => {
-        const c2 = this.state.crop;
+        const drawLayer = (ctx, lc) => {
+          if (!lc) return;
+          const tmp = document.createElement('canvas'); tmp.width = 200; tmp.height = 200;
+          const tctx = tmp.getContext('2d');
+          tctx.save(); tctx.translate(lc.cx, lc.cy); tctx.rotate(lc.rot * Math.PI / 180);
+          tctx.drawImage(lc.img, -lc.w / 2, -lc.h / 2, lc.w, lc.h);
+          tctx.restore();
+          (lc.fills || []).forEach(f => { tctx.fillStyle = f.color; tctx.fillRect(f.x, f.y, f.w, f.h); });
+          this.applyErasures(tctx, lc.erasures);
+          ctx.drawImage(tmp, 0, 0);
+        };
         const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
         const ctx = cv.getContext('2d');
-        ctx.save();
-        ctx.translate(c2.cx, c2.cy);
-        ctx.rotate(c2.rot * Math.PI / 180);
-        ctx.drawImage(c2.img, -c2.w / 2, -c2.h / 2, c2.w, c2.h);
-        ctx.restore();
-        (c2.fills || []).forEach(f => { ctx.fillStyle = f.color; ctx.fillRect(f.x, f.y, f.w, f.h); });
+        this.state.cropLayers.filter(l => !l.hidden).forEach(l => drawLayer(ctx, l.id === this.state.cropActiveLayerId ? this.state.crop : this.state.cropLayerStash[l.id]));
         const bcase = this.getCase(this.state.builderCaseId);
-        const liveBin2 = bcase && bcase.bins.find(b => b.id === c2.binId);
-        const finalText = c2.override ? (c2.text || '') : ((liveBin2 && liveBin2.label) || '');
+        const binId = this.state.cropBinId;
+        const ov = this.state.cropOverride, txt = this.state.cropText;
         try {
-          this.updateBin(bcase, c2.binId, { image: cv.toDataURL('image/png'), thumbOverride: !!c2.override, thumbText: c2.override ? finalText : (c2.text || '') });
-          this.setState({ crop: null });
+          this.updateBin(bcase, binId, { image: cv.toDataURL('image/png'), thumbOverride: !!ov, thumbText: txt || '' });
+          this.setState({ crop: null, cropLayers: [], cropLayerStash: {}, cropActiveLayerId: null });
         } catch (e) {
-          this.setState({ crop: null });
+          this.setState({ crop: null, cropLayers: [], cropLayerStash: {}, cropActiveLayerId: null });
           this.toast("Couldn't use that image — the source site blocks it. Try saving it first, then upload the file.");
         }
       };
     } else {
-      Object.assign(vals, { cropOuterStyle: { display: 'none' }, cropViewportStyle: {}, cropMarkerStyle: {}, cropClipStyle: {}, cropWrapStyle: {}, cropImgStyle: {}, cropCrosshairHStyle: { display: 'none' }, cropCrosshairVStyle: { display: 'none' }, onCropDown: () => {}, onCropMove: () => {}, onCropUp: () => {}, cropCancel: () => {}, cropConfirm: () => {}, isTransformTool: true, isFillTool: false, transformToolStyle: {}, fillToolStyle: {}, setToolTransform: () => {}, setToolFill: () => {}, handles: [], fillRects: [], noFills: true, undoFill: () => {}, cropUndo: () => {}, cropRedo: () => {}, cropUndoDisabled: true, cropRedoDisabled: true, cropUndoStyle: {}, cropRedoStyle: {}, fillColorHex: '#ffffff', fillColorText: '#ffffff', onFillColorPick: () => {}, onFillColorText: () => {}, hasSelectRect: false, selectRectStyle: { display: 'none' }, overrideChecked: false, onToggleOverride: () => {}, textValue: '', textDisabled: true, textAreaBg: '#f2ede4', onTextChange: () => {}, resetThumbText: () => {}, hasPreviewText: false, previewTextLine1: '', previewTextLine2: '', previewTextStyle: { display: 'none' } });
+      Object.assign(vals, { cropOuterStyle: { display: 'none' }, cropZoomWrapStyle: {}, cropViewportStyle: {}, cropMarkerStyle: {}, cropClipStyle: {}, cropCrosshairHStyle: { display: 'none' }, cropCrosshairVStyle: { display: 'none' }, onCropDown: () => {}, onCropMove: () => {}, onCropUp: () => {}, cropCancel: () => {}, cropConfirm: () => {}, isTransformTool: true, isFillTool: false, cropSelectBtnStyle: {}, cropFillBtnStyle: {}, cropMarqueeBtnStyle: {}, cropLassoBtnStyle: {}, setToolTransform: () => {}, setToolFill: () => {}, cropSetMarquee: () => {}, cropSetLasso: () => {}, cropDeleteSelection: () => {}, cropDeleteSelectionDisabled: true, cropDeleteSelectionStyle: {}, cropColorPickerOpen: false, cropToggleColorPicker: () => {}, cropColorSwatchStyle: {}, handles: [], cropCanvasLayers: [], cropUndo: () => {}, cropRedo: () => {}, cropUndoDisabled: true, cropRedoDisabled: true, cropUndoStyle: {}, cropRedoStyle: {}, fillColorHex: '#ffffff', fillColorText: '#ffffff', onFillColorPick: () => {}, onFillColorText: () => {}, hasSelectRect: false, selectRectStyle: { display: 'none' }, hasLassoSelect: false, lassoPathD: '', cropZoomLabel: '100%', cropZoomInDisabled: false, cropZoomOutDisabled: true, cropZoomIn: () => {}, cropZoomOut: () => {}, cropZoomReset: () => {}, cropZoomInStyle: {}, cropZoomOutStyle: {}, cropZoomResetStyle: {}, cropOnUpload: () => {}, cropHasLayers: false, cropLayerItems: [] });
     }
 
     const st2 = this.state.stCrop;
@@ -2295,46 +2769,127 @@ class Component extends DCLogic {
     vals.stRedoDisabled = this.state.stFuture.length === 0;
     vals.stUndo = () => this.stUndo();
     vals.stRedo = () => this.stRedo();
-    const stBtnBase = { border: '1px solid #d9cdba', background: '#fff', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 };
+    const stBtnBase = { border: '1px solid #c7c2b8', background: '#f0efec', color: '#4a4238', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 };
     vals.stUndoStyle = { ...stBtnBase, opacity: vals.stUndoDisabled ? 0.4 : 1, cursor: vals.stUndoDisabled ? 'not-allowed' : 'pointer' };
     vals.stRedoStyle = { ...stBtnBase, opacity: vals.stRedoDisabled ? 0.4 : 1, cursor: vals.stRedoDisabled ? 'not-allowed' : 'pointer' };
-    vals.stSaveDisabled = !st2;
+    vals.stSaveDisabled = !st2 && this.state.stLayers.length === 0;
     vals.stSaveStyle = { border: 'none', borderRadius: '8px', padding: '10px 18px', fontWeight: 700, fontSize: '13px', color: '#fff', background: vals.stSaveDisabled ? '#c9bfae' : '#1c1814', cursor: vals.stSaveDisabled ? 'not-allowed' : 'pointer' };
     vals.stSave = () => this.stSave();
     vals.stCropRef = (el) => { this.stCropEl = el; };
+    vals.stHasLayers = this.state.stLayers.length > 0;
+    vals.stNoLayers = this.state.stLayers.length === 0;
+    const dispOrder = this.state.stLayers.slice().reverse();
+    const dragIdx = this.state.stDragLayerIdx;
+    vals.stLayerItems = dispOrder.map((l, di) => {
+      const isActive = l.id === this.state.stActiveLayerId;
+      const lc = isActive ? st2 : this.state.stLayerStash[l.id];
+      const canDelete = !l.isBackground;
+      return {
+        id: l.id, name: l.name, isActive,
+        draggable: true,
+        wrapStyle: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px', borderRadius: '6px', cursor: 'grab', background: isActive ? '#f2ece1' : 'transparent', opacity: dragIdx === di ? 0.4 : 1 },
+        thumbStyle: { width: '40px', height: '40px', flexShrink: 0, borderRadius: '4px', background: lc && lc.img ? ('#fff url(' + lc.img.src + ') center/cover') : '#e6dccd', border: isActive ? '2px solid #1c1814' : '1px solid #d9cdba', boxSizing: 'border-box', opacity: l.hidden ? 0.35 : 1 },
+        eyeBtnStyle: { position: 'relative', border: 'none', background: 'transparent', color: '#7a6f61', fontSize: '15px', cursor: 'pointer', padding: '4px', lineHeight: 1, flexShrink: 0 },
+        eyeXStyle: { position: 'absolute', inset: 0, display: l.hidden ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center', color: '#c0392b', fontWeight: 900, fontSize: '15px', pointerEvents: 'none' },
+        deleteBtnStyle: { border: 'none', background: 'transparent', color: canDelete ? '#a0958a' : '#d9cdba', fontSize: '15px', cursor: canDelete ? 'pointer' : 'not-allowed', padding: '4px', lineHeight: 1, flexShrink: 0 },
+        onSelect: () => this.stSelectLayer(l.id),
+        onDelete: (e) => { e.stopPropagation(); if (canDelete) this.stDeleteLayer(l.id); },
+        onToggleVisible: (e) => { e.stopPropagation(); this.stToggleLayerVisible(l.id); },
+        onDragStart: (e) => { try { e.dataTransfer.effectAllowed = 'move'; } catch (err) {} this.setState({ stDragLayerIdx: di }); },
+        onDragOver: (e) => e.preventDefault(),
+        onDrop: (e) => {
+          e.preventDefault();
+          const from = this.state.stDragLayerIdx;
+          if (from == null || from === di) return;
+          const order = dispOrder.slice();
+          const [moved] = order.splice(from, 1);
+          order.splice(di, 0, moved);
+          this.setState({ stLayers: order.slice().reverse(), stDragLayerIdx: null });
+        },
+        onDragEnd: () => this.setState({ stDragLayerIdx: null })
+      };
+    });
 
     if (st2) {
       const stTool = st2.tool || 'transform';
       vals.stIsTransformTool = stTool === 'transform'; vals.stIsFillTool = stTool === 'fill';
-      vals.stArmFillLabel = stTool === 'fill' ? 'Drag on the image to fill…' : 'Draw fill area';
-      vals.stArmFillStyle = { width: '100%', border: '1px solid ' + (stTool === 'fill' ? '#e85d1f' : '#d9cdba'), background: stTool === 'fill' ? '#e85d1f' : '#fff', color: stTool === 'fill' ? '#fff' : '#1c1814', borderRadius: '6px', padding: '7px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' };
-      vals.stArmFill = () => this.setState({ stCrop: { ...st2, tool: stTool === 'fill' ? 'transform' : 'fill', dragging: null, select: null } });
+      const stToolBtnBase = { border: '1px solid #c7c2b8', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer' };
+      vals.stSelectBtnStyle = { ...stToolBtnBase, background: stTool === 'transform' ? '#3a352c' : '#f0efec', color: stTool === 'transform' ? '#fff' : '#4a4238' };
+      vals.stFillBtnStyle = { ...stToolBtnBase, background: stTool === 'fill' ? '#3a352c' : '#f0efec', color: stTool === 'fill' ? '#fff' : '#4a4238' };
+      vals.stMarqueeBtnStyle = { ...stToolBtnBase, background: stTool === 'marquee' ? '#3a352c' : '#f0efec', color: stTool === 'marquee' ? '#fff' : '#4a4238' };
+      vals.stLassoBtnStyle = { ...stToolBtnBase, background: stTool === 'lasso' ? '#3a352c' : '#f0efec', color: stTool === 'lasso' ? '#fff' : '#4a4238' };
+      vals.stSetSelect = () => this.setState({ stCrop: { ...st2, tool: 'transform', dragging: null, select: null } });
+      vals.stSetFill = () => this.setState({ stCrop: { ...st2, tool: 'fill', dragging: null, select: null } });
+      vals.stSetMarquee = () => this.setState({ stCrop: { ...st2, tool: 'marquee', dragging: null, select: null } });
+      vals.stSetLasso = () => this.setState({ stCrop: { ...st2, tool: 'lasso', dragging: null, select: null } });
+      vals.stDeleteSelectionDisabled = !st2.select;
+      vals.stDeleteSelection = () => this.stDeleteSelection();
+      vals.stDeleteSelectionStyle = { ...stToolBtnBase, cursor: vals.stDeleteSelectionDisabled ? 'not-allowed' : 'pointer', opacity: vals.stDeleteSelectionDisabled ? 0.4 : 1, background: '#f0efec', color: '#c0392b' };
       vals.stPreviewTextStyle = { position: 'absolute', bottom: '8px', right: '12px', left: '12px', textAlign: 'right', color: '#000', fontFamily: "'Roboto Condensed',sans-serif", fontWeight: 700, fontSize: '26px', lineHeight: '1.25', textShadow: '0 0 3px #fff, 0 0 3px #fff', pointerEvents: 'none', overflow: 'hidden' };
       const M2 = this.ST_MARGIN;
-      vals.stOuterStyle = { position: 'relative', width: (200 + 2 * M2) + 'px', height: (200 + 2 * M2) + 'px' };
-      vals.stViewportStyle = { position: 'relative', width: '100%', height: '100%', touchAction: 'none', cursor: stTool === 'fill' ? 'crosshair' : 'grab' };
+      const zoom = this.state.stZoom || 1;
+      vals.stZoomWrapStyle = { width: (200 + 2 * M2) + 'px', height: (200 + 2 * M2) + 'px', overflow: 'hidden', position: 'relative' };
+      vals.stOuterStyle = { position: 'absolute', left: '50%', top: '50%', width: (200 + 2 * M2) + 'px', height: (200 + 2 * M2) + 'px', transform: 'translate(-50%,-50%) scale(' + zoom + ')', transformOrigin: 'center' };
+      vals.stViewportStyle = { position: 'relative', width: '100%', height: '100%', touchAction: 'none', cursor: (stTool === 'fill' || stTool === 'marquee' || stTool === 'lasso') ? 'crosshair' : 'grab' };
       vals.stMarkerStyle = { position: 'absolute', left: M2 + 'px', top: M2 + 'px', width: '200px', height: '200px', border: '2px dashed #9a9a9a', borderRadius: '8px', pointerEvents: 'none', boxShadow: '0 0 0 1px #fff' };
-      vals.stClipStyle = { position: 'absolute', left: M2 + 'px', top: M2 + 'px', width: '200px', height: '200px', overflow: 'hidden', borderRadius: '8px', background: '#fff' };
+      vals.stClipStyle = { position: 'absolute', left: M2 + 'px', top: M2 + 'px', width: '200px', height: '200px', overflow: 'hidden', borderRadius: '8px', background: 'repeating-conic-gradient(#e2ded4 0% 25%, #fff 0% 50%) 0 0/16px 16px' };
       vals.stWrapStyle = { position: 'absolute', left: st2.cx + 'px', top: st2.cy + 'px', width: '0', height: '0', transform: 'rotate(' + st2.rot + 'deg)' };
       vals.stCrosshairHStyle = { position: 'absolute', left: 0, top: '100px', width: '200px', height: '1px', background: 'rgba(230,30,30,0.85)', pointerEvents: 'none', zIndex: 2 };
       vals.stCrosshairVStyle = { position: 'absolute', left: '100px', top: 0, width: '1px', height: '200px', background: 'rgba(230,30,30,0.85)', pointerEvents: 'none', zIndex: 2 };
-      vals.stImgStyle = { position: 'absolute', left: (-st2.w / 2) + 'px', top: (-st2.h / 2) + 'px', width: st2.w + 'px', height: st2.h + 'px', backgroundImage: 'url(' + st2.img.src + ')', backgroundSize: '100% 100%' };
+      vals.stZoom = zoom;
+      vals.stZoomLabel = Math.round(zoom * 100) + '%';
+      vals.stZoomInDisabled = zoom >= 1.75;
+      vals.stZoomOutDisabled = zoom <= 1;
+      vals.stZoomIn = () => this.stZoomIn();
+      vals.stZoomOut = () => this.stZoomOut();
+      vals.stZoomReset = () => this.stZoomReset();
+      const stZoomBtnBase = { border: '1px solid #c7c2b8', background: '#f0efec', color: '#4a4238', borderRadius: '6px', width: '36px', height: '36px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 };
+      vals.stZoomInStyle = { ...stZoomBtnBase, opacity: vals.stZoomInDisabled ? 0.4 : 1, cursor: vals.stZoomInDisabled ? 'not-allowed' : 'pointer' };
+      vals.stZoomOutStyle = { ...stZoomBtnBase, opacity: vals.stZoomOutDisabled ? 0.4 : 1, cursor: vals.stZoomOutDisabled ? 'not-allowed' : 'pointer' };
+      vals.stZoomResetStyle = { border: '1px solid #c7c2b8', background: '#f0efec', color: '#4a4238', borderRadius: '6px', padding: '0 10px', height: '36px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center' };
+      vals.stCanvasLayers = this.state.stLayers.filter(l => !l.hidden).map(l => {
+        const lc = l.id === this.state.stActiveLayerId ? st2 : this.state.stLayerStash[l.id];
+        if (!lc) return null;
+        const tmp = document.createElement('canvas'); tmp.width = 200; tmp.height = 200;
+        const tctx = tmp.getContext('2d');
+        tctx.save(); tctx.translate(lc.cx, lc.cy); tctx.rotate(lc.rot * Math.PI / 180);
+        tctx.drawImage(lc.img, -lc.w / 2, -lc.h / 2, lc.w, lc.h);
+        tctx.restore();
+        (lc.fills || []).forEach(f => { tctx.fillStyle = f.color; tctx.fillRect(f.x, f.y, f.w, f.h); });
+        this.applyErasures(tctx, lc.erasures);
+        return {
+          imgStyle: { position: 'absolute', left: '0px', top: '0px', width: '200px', height: '200px', backgroundImage: 'url(' + tmp.toDataURL('image/png') + ')', backgroundSize: '100% 100%' }
+        };
+      }).filter(Boolean);
       const stFills = st2.fills || [];
       vals.stFillRects = stFills.map(f => ({ style: { position: 'absolute', left: f.x + 'px', top: f.y + 'px', width: f.w + 'px', height: f.h + 'px', background: f.color, pointerEvents: 'none' } }));
       vals.stNoFills = stFills.length === 0;
       vals.stUndoFill = () => this.stApply({ ...st2, fills: stFills.slice(0, -1) });
       vals.stFillColorHex = /^#[0-9a-f]{6}$/i.test(st2.fillColor) ? st2.fillColor : '#ffffff';
       vals.stFillColorText = st2.fillColor || '#ffffff';
+      vals.stColorPickerOpen = !!this.state.stColorPickerOpen;
+      vals.stToggleColorPicker = () => this.setState(s => ({ stColorPickerOpen: !s.stColorPickerOpen }));
+      vals.stColorSwatchStyle = { width: '36px', height: '36px', borderRadius: '6px', border: '2px solid #1c1814', background: st2.fillColor || '#ffffff', cursor: 'pointer', padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' };
       vals.stOnFillColorPick = (e) => this.setState({ stCrop: { ...st2, fillColor: e.target.value } });
       vals.stOnFillColorText = (e) => { const v = e.target.value; if (this.validColor(v)) this.setState({ stCrop: { ...st2, fillColor: v } }); };
       vals.stHasSelectRect = !!st2.select;
-      if (st2.select) {
+      vals.stHasSelectRect = !!(st2.select && !st2.select.points);
+      if (st2.select && !st2.select.points) {
         const s = st2.select;
-        const x = Math.min(s.x0, s.x), y = Math.min(s.y0, s.y), w = Math.abs(s.x - s.x0), h = Math.abs(s.y - s.y0);
-        vals.stSelectRectStyle = { position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', background: 'rgba(232,93,31,0.25)', border: '1px dashed #e85d1f', pointerEvents: 'none' };
+        const x = s.w != null ? s.x : Math.min(s.x0, s.x), y = s.w != null ? s.y : Math.min(s.y0, s.y), w = s.w != null ? s.w : Math.abs(s.x - s.x0), h = s.h != null ? s.h : Math.abs(s.y - s.y0);
+        vals.stSelectRectStyle = {
+          position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', pointerEvents: 'none',
+          background: 'repeating-linear-gradient(90deg,#000 0 6px,#fff 6px 12px),repeating-linear-gradient(90deg,#000 0 6px,#fff 6px 12px),repeating-linear-gradient(0deg,#000 0 6px,#fff 6px 12px),repeating-linear-gradient(0deg,#000 0 6px,#fff 6px 12px),rgba(255,255,255,0.12)',
+          backgroundSize: '12px 2px,12px 2px,2px 12px,2px 12px,100% 100%',
+          backgroundPosition: '0 0,0 100%,0 0,100% 0,0 0',
+          backgroundRepeat: 'repeat-x,repeat-x,repeat-y,repeat-y,no-repeat',
+          animation: 'ccMarchAnts 0.6s linear infinite'
+        };
       } else vals.stSelectRectStyle = { display: 'none' };
+      vals.stHasLassoSelect = !!(st2.select && st2.select.points && st2.select.points.length > 1);
+      vals.stLassoPathD = vals.stHasLassoSelect ? ('M' + st2.select.points.map(p => p.x + ' ' + p.y).join(' L') + ' Z') : '';
       const STSIGNS = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
-      const stToViewport = (e) => { const r = this.stCropEl.getBoundingClientRect(); return { x: e.clientX - r.left - M2, y: e.clientY - r.top - M2 }; };
+      const stToViewport = (e) => { const r = this.stCropEl.getBoundingClientRect(); const z = this.state.stZoom || 1; return { x: (e.clientX - r.left) / z - M2, y: (e.clientY - r.top) / z - M2 }; };
       const stToLocalClamped = (e) => { const p = stToViewport(e); return { x: Math.min(200, Math.max(0, p.x)), y: Math.min(200, Math.max(0, p.y)) }; };
       vals.stHandles = st2.handleMode === 'rotate'
         ? STSIGNS.map((s, i) => ({ icon: '↻', title: 'Drag to rotate', style: { position: 'absolute', left: (M2 + st2.cx + this.rotPt(s[0] * st2.w / 2, s[1] * st2.h / 2, st2.rot).x - 11) + 'px', top: (M2 + st2.cy + this.rotPt(s[0] * st2.w / 2, s[1] * st2.h / 2, st2.rot).y - 11) + 'px', width: '22px', height: '22px', borderRadius: '50%', background: '#fff', border: '2px solid #2f7fb8', color: '#2f7fb8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', cursor: 'grab', userSelect: 'none' }, onDown: (e) => this.stOnHandleDown(i, e) }))
@@ -2343,19 +2898,28 @@ class Component extends DCLogic {
         e.preventDefault();
         try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
         this._stPre = st2;
-        if (stTool === 'fill') {
+        if (stTool === 'fill' || stTool === 'marquee') {
           const p = stToLocalClamped(e);
-          this.setState({ stCrop: { ...st2, select: { x0: p.x, y0: p.y, x: p.x, y: p.y } } });
+          this.setState({ stCrop: { ...st2, select: { x0: p.x, y0: p.y, x: p.x, y: p.y }, selecting: true } });
+        } else if (stTool === 'lasso') {
+          const p = stToLocalClamped(e);
+          this.setState({ stCrop: { ...st2, select: { points: [p] }, selecting: true } });
         } else {
           this.setState({ stCrop: { ...st2, dragging: { type: 'move', startX: e.clientX, startY: e.clientY, startCx: st2.cx, startCy: st2.cy, moved: false } } });
         }
       };
       vals.stOnCropMove = (e) => {
         const c2 = this.state.stCrop; if (!c2) return;
-        if ((c2.tool || 'transform') === 'fill') {
+        if (((c2.tool || 'transform') === 'fill' || (c2.tool || 'transform') === 'marquee') && c2.selecting) {
           if (!c2.select) return;
           const p = stToLocalClamped(e);
           this.setState({ stCrop: { ...c2, select: { ...c2.select, x: p.x, y: p.y } } });
+          return;
+        }
+        if ((c2.tool || 'transform') === 'lasso' && c2.selecting) {
+          if (!c2.select) return;
+          const p = stToLocalClamped(e);
+          this.setState({ stCrop: { ...c2, select: { points: c2.select.points.concat([p]) } } });
           return;
         }
         const d = c2.dragging; if (!d) return;
@@ -2385,9 +2949,28 @@ class Component extends DCLogic {
           const x = Math.min(s.x0, s.x), y = Math.min(s.y0, s.y), w = Math.abs(s.x - s.x0), h = Math.abs(s.y - s.y0);
           if (w > 3 && h > 3) {
             const fills = (c2.fills || []).concat([{ x, y, w, h, color: c2.fillColor || '#ffffff' }]);
-            this.setState({ stCrop: { ...c2, select: null, fills, tool: 'transform' }, stHistory: [...this.state.stHistory, pre], stFuture: [] });
+            this.setState({ stCrop: { ...c2, select: null, selecting: false, fills, tool: 'fill' }, stHistory: [...this.state.stHistory, pre], stFuture: [] });
           } else {
-            this.setState({ stCrop: { ...c2, select: null } });
+            this.setState({ stCrop: { ...c2, select: null, selecting: false } });
+          }
+          return;
+        }
+        if ((c2.tool || 'transform') === 'marquee' && c2.select) {
+          const s = c2.select;
+          const x = Math.min(s.x0, s.x), y = Math.min(s.y0, s.y), w = Math.abs(s.x - s.x0), h = Math.abs(s.y - s.y0);
+          if (w > 3 && h > 3) {
+            this.setState({ stCrop: { ...c2, select: { x, y, w, h }, selecting: false } });
+          } else {
+            this.setState({ stCrop: { ...c2, select: null, selecting: false } });
+          }
+          return;
+        }
+        if ((c2.tool || 'transform') === 'lasso' && c2.select) {
+          const pts = c2.select.points;
+          if (pts.length > 2) {
+            this.setState({ stCrop: { ...c2, select: { points: pts }, selecting: false } });
+          } else {
+            this.setState({ stCrop: { ...c2, select: null, selecting: false } });
           }
           return;
         }
@@ -2403,7 +2986,7 @@ class Component extends DCLogic {
         }
       };
     } else {
-      Object.assign(vals, { stIsTransformTool: true, stIsFillTool: false, stArmFillLabel: 'Draw fill area', stArmFillStyle: {}, stArmFill: () => {}, stHasPreviewText: false, stPreviewTextLine1: '', stPreviewTextLine2: '', stPreviewTextStyle: { display: 'none' }, stOuterStyle: { display: 'none' }, stViewportStyle: {}, stMarkerStyle: {}, stClipStyle: {}, stWrapStyle: {}, stImgStyle: {}, stFillRects: [], stNoFills: true, stUndoFill: () => {}, stFillColorHex: '#ffffff', stFillColorText: '#ffffff', stOnFillColorPick: () => {}, stOnFillColorText: () => {}, stHasSelectRect: false, stSelectRectStyle: { display: 'none' }, stHandles: [], stOnCropDown: () => {}, stOnCropMove: () => {}, stOnCropUp: () => {} });
+      Object.assign(vals, { stIsTransformTool: true, stIsFillTool: false, stSelectBtnStyle: { border: '1px solid #c7c2b8', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer', background: '#f0efec', color: '#4a4238' }, stFillBtnStyle: { border: '1px solid #c7c2b8', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer', background: '#f0efec', color: '#4a4238' }, stMarqueeBtnStyle: { border: '1px solid #c7c2b8', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer', background: '#f0efec', color: '#4a4238' }, stLassoBtnStyle: { border: '1px solid #c7c2b8', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer', background: '#f0efec', color: '#4a4238' }, stSetLasso: () => {}, stSetMarquee: () => {}, stHasSelectRect: false, stSelectRectStyle: { display: 'none' }, stHasLassoSelect: false, stLassoPathD: '', stDeleteSelection: () => {}, stDeleteSelectionDisabled: true, stDeleteSelectionStyle: { border: '1px solid #c7c2b8', borderRadius: '6px', width: '36px', height: '36px', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, opacity: 0.4, cursor: 'not-allowed', background: '#f0efec', color: '#c0392b' }, stZoomOutStyle: { border: '1px solid #c7c2b8', background: '#f0efec', color: '#4a4238', borderRadius: '6px', width: '36px', height: '36px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, opacity: 0.4, cursor: 'not-allowed' }, stZoomInStyle: { border: '1px solid #c7c2b8', background: '#f0efec', color: '#4a4238', borderRadius: '6px', width: '36px', height: '36px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer' }, stZoomResetStyle: { border: '1px solid #c7c2b8', background: '#f0efec', color: '#4a4238', borderRadius: '6px', padding: '0 10px', height: '36px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center' }, stZoomOutDisabled: true, stZoomInDisabled: false, stZoomLabel: '100%', stZoomIn: () => this.stZoomIn(), stZoomOut: () => this.stZoomOut(), stZoomReset: () => this.stZoomReset(), stSetSelect: () => {}, stSetFill: () => {}, stColorPickerOpen: false, stToggleColorPicker: () => {}, stColorSwatchStyle: { width: '36px', height: '36px', borderRadius: '6px', border: '2px solid #1c1814', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }, stHasPreviewText: false, stPreviewTextLine1: '', stPreviewTextLine2: '', stPreviewTextStyle: { display: 'none' }, stOuterStyle: { display: 'none' }, stViewportStyle: {}, stMarkerStyle: {}, stClipStyle: {}, stWrapStyle: {}, stImgStyle: {}, stFillRects: [], stNoFills: true, stUndoFill: () => {}, stFillColorHex: '#ffffff', stFillColorText: '#ffffff', stOnFillColorPick: () => {}, stOnFillColorText: () => {}, stHasSelectRect: false, stSelectRectStyle: { display: 'none' }, stHandles: [], stOnCropDown: () => {}, stOnCropMove: () => {}, stOnCropUp: () => {} });
     }
     return vals;
   }
