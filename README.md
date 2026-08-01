@@ -19,7 +19,6 @@ cover only what differs.
 |`CaseLookup.dc.html`|for lookup only|The read-only app.|
 |`support.js`|yes|Runtime. Must sit next to the HTML.|
 |`Cases/*.zip`|yes|Your case data — see below.|
-|`Collections/Master_Collection.zip`|optional|Case Lookup fallback, used only if `Cases/` can't be listed.|
 
 ## Where case data comes from
 
@@ -29,9 +28,6 @@ mixed. Cases are sorted by filename; duplicate case names get `(2)`, `(3)` suffi
 
 To add a case: drop its zip into `Cases/` and reload. To remove one: delete the zip
 and reload. No config changes needed.
-
-There is **no Export Collection** — the folder is the collection. Save each case as
-its own `.zip` into `Cases/`.
 
 If some zips fail to parse, the rest still load and a banner names the ones skipped.
 If nothing loads at all, the last cached copy in that browser is shown with a warning.
@@ -86,13 +82,6 @@ URL `/local/casecreator/CaseCreator.dc.html` (swap in `CaseLookup.dc.html` as ne
 **`/local/` serves no directory index**, so automatic folder loading fails there.
 Options:
 
-1. Serve the folder from something that does list directories — the *NGINX Proxy
-Manager* or a small Python server on the Pi — and point `casesFolder` at that URL.
-2. Case Lookup only: keep `Collections/Master_Collection.zip` current; it falls back
-to that automatically.
-3. Import the zips manually once per device (Import / Export → Import Case File(s));
-they persist in that browser afterwards.
-
 ## Sign in
 
 **Default credentials: `admin` / `admin`**
@@ -128,16 +117,6 @@ So: never put a password you use elsewhere in here. Treat this as a "keep the
 household out of it" gate, not access control. For real protection, put the folder
 behind NGINX Proxy Manager basic auth or another server-side login.
 
-## Tweaks
-
-|Prop|Default|Purpose|Apps|
-|-|-|-|-|
-|`credential`|(encoded)|Login, stored base64-encoded as `user:password`|both|
-|`casesFolder`|`./Cases/`|Folder scanned for `.zip` case files|both|
-|`collectionPath`|`./Collections/Master_Collection.zip`|Fallback archive|Lookup|
-
-Paths are relative to the HTML file.
-
 ## Mobile
 
 Single-column layout on phones, 16px inputs (prevents iOS zoom), 44–50px touch
@@ -158,10 +137,6 @@ block reading local files that way; it must be served over HTTP.
 
 **Cases vanish after reload** — they were never saved into `Cases/`. Save each case
 as a zip and copy it to the folder.
-
-**Only one case shows** — the zip you loaded contains only that case, or HA fell back
-to a stale `Master_Collection.zip`. Download the zip directly from the server URL and
-inspect it.
 
 **Changes don't appear** — hard-refresh (`Ctrl+Shift+R`). HA caches `/local/`
 aggressively; appending `?v=2` to the URL also works.
@@ -208,7 +183,3 @@ grid visually. No editing, no builder, no thumbnail editor — pair it with Case
 for authoring.
 
 Two tabs only: **Search** (including Find Empty) and **View Cases**.
-
-Unlike Case Creator it has a `collectionPath` fallback: if `Cases/` can't be listed
-(as on Home Assistant `/local/`), it loads `Collections/Master_Collection.zip`
-instead. Keep that file current if you deploy to HA.
