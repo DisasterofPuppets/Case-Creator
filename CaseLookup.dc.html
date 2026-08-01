@@ -217,7 +217,7 @@ input,select,button,textarea{font-family:inherit;font-size:16px}
       </sc-if>
       <sc-if value="{{ nothingLoaded }}" hint-placeholder-val="{{ false }}">
         <div style="background:#fffdf9;border:1px solid #e6dccd;border-radius:12px;padding:26px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
-          <div style="color:#7a6f61;font-size:14px">No cases loaded from Collections/Master_Collection.zip</div>
+          <div style="color:#7a6f61;font-size:14px">No cases loaded from the Cases folder</div>
           <button onClick="{{ reload }}" style="background:#e85d1f;color:#fff;border:none;border-radius:8px;padding:13px 22px;font-weight:700;font-size:15px;cursor:pointer;min-height:48px" style-hover="background:#d95511">Reload collection</button>
         </div>
       </sc-if>
@@ -285,7 +285,7 @@ input,select,button,textarea{font-family:inherit;font-size:16px}
 </sc-if>
 
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;credential&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;YWRtaW46YWRtaW4=&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Access&quot;},&quot;casesFolder&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;./Cases/&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Data&quot;},&quot;collectionPath&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;./Collections/Master_Collection.zip&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Data&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;credential&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;YWRtaW46YWRtaW4=&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Access&quot;},&quot;casesFolder&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;./Cases/&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Data&quot;}}">
 
 class Component extends DCLogic {
   state = {
@@ -1214,7 +1214,6 @@ class Component extends DCLogic {
   }
   cfgUser() { return this.decodeCred().u; }
   cfgPass() { return this.decodeCred().p; }
-  cfgPath() { return String(this.props.collectionPath || './Collections/Master_Collection.zip'); }
   cfgFolder() { let f = String(this.props.casesFolder || './Cases/'); if (!f.endsWith('/')) f += '/'; return f; }
   async listZipsInFolder() {
     const folder = this.cfgFolder();
@@ -1260,7 +1259,6 @@ class Component extends DCLogic {
       let urls = [];
       let listErr = '';
       try { urls = await this.listZipsInFolder(); } catch (e) { listErr = e.message; }
-      if (!urls.length) urls = [this.cfgPath()];
       const cases = [];
       const failed = [];
       for (const url of urls) {

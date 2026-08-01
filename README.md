@@ -80,26 +80,25 @@ URL `/local/casecreator/CaseCreator.dc.html` (swap in `CaseLookup.dc.html` as ne
 `panel_iframe:` in YAML was removed from recent HA versions — use the UI.
 
 **`/local/` serves no directory index**, so automatic folder loading fails there.
-Options:
+Fix it by serving the `Cases/` folder from something that does list directories —
+NGINX Proxy Manager, or a small Python server on the Pi — and pointing `casesFolder`
+in the HTML at that URL.
 
 ## Sign in
 
 **Default credentials: `admin` / `admin`**
 
-Stored in the `credential` Tweak as one base64 string of `username:password` —
-currently `YWRtaW46YWRtaW4=` — so the password isn't sitting in the file as plain
-text. "Keep me signed in" stores the credential on that device.
+Stored in the HTML as one base64 string of `username:password` — currently
+`YWRtaW46YWRtaW4=` — so the password isn't sitting in the file as plain text.
+"Keep me signed in" stores the credential on that device.
 
 ### Changing the credentials
 
 1. Open any browser, press `F12`, go to the **Console** tab.
 2. Run `btoa('newuser:newpassword')` with your own values.
 3. Copy the quoted result, e.g. `bmV3dXNlcjpuZXdwYXNzd29yZA==`.
-4. Paste it into the `credential` Tweak, replacing the old value.
-
-To edit it directly in the file instead, search the HTML for `YWRtaW46YWRtaW4=` and
-replace **both** occurrences — one in the `data-props` attribute, one in `cfgCred()`.
-Do this in each app you deploy.
+4. Search the HTML for `YWRtaW46YWRtaW4=` and replace **both** occurrences — one in
+the `data-props` attribute, one in `cfgCred()`. Do this in each app you deploy.
 
 After changing it, sign out on every device where you used "Keep me signed in" — the
 saved token no longer matches and login will fail until you do.
@@ -123,8 +122,8 @@ Single-column layout on phones, 16px inputs (prevents iOS zoom), 44–50px touch
 targets, no horizontal page overflow. Search results stack thumbnail → grid → 3D
 vertically. Case Creator switches at 760px with a two-column nav; Case Lookup at 720px.
 
-Case Builder and Thumbnail Editor are usable on a tablet but are designed for a
-mouse — do authoring on a desktop.
+The Case Creator and Thumbnail Editor tabs are usable on a tablet but are designed for
+a mouse — do authoring on a desktop.
 
 ## Troubleshooting
 
@@ -153,26 +152,20 @@ Authoring app. Everything Case Lookup does, plus creating and editing cases.
 |-|-|
 |Search|Find parts by name, bin label, or note. Shows thumbnail, 2D grid, 3D view.|
 |Find Empty|Lists free cells per case. Hover a result to x-ray the case and see them.|
-|Case Builder|Create/edit cases: draw bins, resize, colour-code levels, add notes.|
+|Case Creator|Create/edit cases: draw bins, resize, colour-code levels, add notes.|
 |View Cases|Browse any loaded case level by level.|
-|Import / Export|Cases-folder status and reload, manual `.zip` import, per-case save.|
+|Cases Folder|Folder status, skipped zips, and a **Reload from folder** button.|
 |Thumbnail Editor|Crop, layer, and edit case and bin images.|
 |Help|In-app guide with animated demos.|
 
 ## Saving a case
 
-Case Builder → save the case; the browser downloads `<Case Name>.zip`. Move that zip
+Case Creator → save the case; the browser downloads `<Case Name>.zip`. Move that zip
 into the `Cases/` folder on the server and it loads for everyone next time.
 
-Cases you create in the browser but haven't saved into `Cases/` yet live in that
+Cases you create in the browser but haven't copied into `Cases/` yet live in that
 browser's local storage and appear alongside the folder cases. A folder case with the
-same name wins on reload.
-
-## Cases folder card
-
-Import / Export tab → **Cases folder** shows the path in use, how many cases loaded,
-any zips that were skipped, and a **Reload from folder** button so you don't have to
-refresh the page.
+same name wins on reload. There is no manual import — the folder is the only way in.
 
 ---
 
