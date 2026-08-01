@@ -835,7 +835,7 @@ img,canvas{max-width:100%}
     <sc-if value="{{ cropOpen }}" hint-placeholder-val="{{ false }}">
       <div style="position:fixed;inset:0;background:rgba(28,24,20,0.6);display:flex;align-items:center;justify-content:center;z-index:50">
         <div style="background:#e4ded2;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;width:760px;max-width:calc(100vw - 40px);box-sizing:border-box">
-          <div style="font-weight:800;font-size:15px">Edit thumbnail</div>
+          <div style="font-weight:800;font-size:15px">{{ cropTitle }}</div>
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-bottom:1px solid #d9cdba;padding-bottom:14px">
             <button onClick="{{ setToolTransform }}" title="Select / Move tool" style="{{ cropSelectBtnStyle }}"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 2 L4 19 L8.5 15.5 L11.5 21.5 L14.5 20 L11.5 14 L17.5 14 Z" fill="currentColor"></path></svg></button>
             <button onClick="{{ setToolFill }}" title="Fill area tool" style="{{ cropFillBtnStyle }}"><svg width="18" height="18" viewBox="0 0 24 24"><g transform="rotate(135 12 12)"><rect x="7" y="2" width="10" height="5.5" rx="1.5" fill="currentColor"></rect><rect x="11" y="7.5" width="2" height="7" fill="currentColor"></rect><rect x="9.3" y="14.5" width="5.4" height="3" rx="0.8" fill="currentColor"></rect><rect x="10.5" y="17.3" width="3" height="4.7" rx="1" fill="currentColor"></rect></g></svg></button>
@@ -1673,9 +1673,15 @@ class Component extends DCLogic {
     if (isRemoteUrl) img.crossOrigin = 'anonymous';
     img.onload = () => {
       if (img.width > 200 || img.height > 200) {
-        const scale = Math.max(200 / img.width, 200 / img.height);
+        const scale = Math.min(200 / img.width, 200 / img.height);
         const w = img.width * scale, h = img.height * scale;
-        this.setState({ crop: { binId, img, w, h, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: Math.max(20, w * 0.1), dragging: null, remote: isRemoteUrl, tool: 'transform', fills: [], fillColor: '#ffffff', select: null, override: !!bin.thumbOverride, text: bin.thumbOverride ? (bin.thumbText || '') : (bin.label || '') } });
+        this.setState({
+          cropBinId: binId,
+          cropOverride: !!bin.thumbOverride,
+          cropText: bin.thumbOverride ? (bin.thumbText || '') : (bin.label || ''),
+          cropLayers: [], cropLayerStash: {}, cropActiveLayerId: null, crop: null,
+          cropHistory: [], cropFuture: [], cropZoom: 1
+        }, () => this.cropLoadImage(src, isRemoteUrl));
       } else {
         try {
           const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
@@ -1693,14 +1699,16 @@ class Component extends DCLogic {
   }
   openImageEditor(bin) {
     this.setState({ cropBinId: bin.id, cropOverride: !!bin.thumbOverride, cropText: bin.thumbOverride ? (bin.thumbText || '') : (bin.label || ''), cropLayers: [], cropLayerStash: {}, cropActiveLayerId: null, crop: null, cropHistory: [], cropFuture: [], cropZoom: 1 }, () => {
-      this.cropLoadImage(bin.image || this.DEFAULT_ICON);
+      if (bin.image && bin.image !== this.DEFAULT_ICON) this.cropLoadImage(bin.image);
+      else this.cropInitBackground();
     });
   }
-  cropLoadImage(src) {
+  cropLoadImage(src, isRemoteUrl) {
     const addContentLayer = () => {
       const img = new Image();
+      if (isRemoteUrl) img.crossOrigin = 'anonymous';
       img.onload = () => {
-        const scale = Math.max(200 / img.width, 200 / img.height);
+        const scale = Math.min(200 / img.width, 200 / img.height);
         const w = img.width * scale, h = img.height * scale;
         const newCrop = { img, w, h, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: Math.max(20, w * 0.1), dragging: null, tool: 'transform', fills: [], erasures: [], fillColor: '#ffffff', select: null };
         const layers = this.state.cropLayers.slice();
@@ -1713,19 +1721,19 @@ class Component extends DCLogic {
       img.onerror = () => this.toast("Couldn't load that image.");
       img.src = src;
     };
-    if (this.state.cropLayers.length === 0) {
-      const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
-      const cctx = cv.getContext('2d'); cctx.fillStyle = '#ffffff'; cctx.fillRect(0, 0, 200, 200);
-      const bgImg = new Image();
-      bgImg.onload = () => {
-        const bgId = 'cbg';
-        const bgCrop = { img: bgImg, w: 200, h: 200, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: 20, dragging: null, tool: 'transform', fills: [], erasures: [], fillColor: '#ffffff', select: null };
-        this.setState({ cropLayers: [{ id: bgId, name: 'Background', hidden: false, isBackground: true }], cropLayerStash: { [bgId]: bgCrop } }, () => addContentLayer());
-      };
-      bgImg.src = cv.toDataURL('image/png');
-    } else {
-      addContentLayer();
-    }
+    if (this.state.cropLayers.length === 0) this.cropInitBackground(addContentLayer);
+    else addContentLayer();
+  }
+  cropInitBackground(cb) {
+    const cv = document.createElement('canvas'); cv.width = 200; cv.height = 200;
+    const cctx = cv.getContext('2d'); cctx.fillStyle = '#ffffff'; cctx.fillRect(0, 0, 200, 200);
+    const bgImg = new Image();
+    bgImg.onload = () => {
+      const bgId = 'cbg';
+      const bgCrop = { img: bgImg, w: 200, h: 200, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: 20, dragging: null, tool: 'transform', fills: [], erasures: [], fillColor: '#ffffff', select: null };
+      this.setState({ cropLayers: [{ id: bgId, name: 'Background', hidden: false, isBackground: true }], cropLayerStash: {}, crop: bgCrop, cropActiveLayerId: bgId, cropHistory: [], cropFuture: [] }, () => { if (cb) cb(); });
+    };
+    bgImg.src = cv.toDataURL('image/png');
   }
   cropSelectLayer(id) {
     if (id === this.state.cropActiveLayerId) return;
@@ -1777,7 +1785,7 @@ class Component extends DCLogic {
     const addContentLayer = () => {
       const img = new Image();
       img.onload = () => {
-        const scale = Math.max(200 / img.width, 200 / img.height);
+        const scale = Math.min(200 / img.width, 200 / img.height);
         const w = img.width * scale, h = img.height * scale;
         const newCrop = { img, w, h, cx: 100, cy: 100, rot: 0, handleMode: 'resize', minW: Math.max(20, w * 0.1), dragging: null, tool: 'transform', fills: [], erasures: [], fillColor: '#ffffff', select: null, override: false, text: '' };
         const layers = this.state.stLayers.slice();
@@ -2793,7 +2801,9 @@ class Component extends DCLogic {
         } else if (d.type === 'rotate') {
           const p = toViewport(e);
           const ang = Math.atan2(p.y - c2.cy, p.x - c2.cx) * 180 / Math.PI;
-          this.setState({ crop: { ...c2, rot: d.startRot + (ang - d.startAng) } });
+          let nrot = d.startRot + (ang - d.startAng);
+          if (e.shiftKey) nrot = Math.round(nrot / 45) * 45;
+          this.setState({ crop: { ...c2, rot: nrot } });
         }
       };
       vals.onCropUp = () => {
@@ -2841,6 +2851,9 @@ class Component extends DCLogic {
         }
       };
       vals.cropOnUpload = (e) => { const f = e.target.files && e.target.files[0]; if (!f) return; const reader = new FileReader(); reader.onload = () => this.cropLoadImage(reader.result); reader.readAsDataURL(f); };
+      const cropBin = (this.getCase(this.state.builderCaseId) || { bins: [] }).bins.find(b => b.id === this.state.cropBinId);
+      const cropBinName = cropBin && cropBin.label ? cropBin.label.trim() : '';
+      vals.cropTitle = cropBinName ? "Edit '" + cropBinName + "' thumbnail" : 'Edit thumbnail';
       vals.cropHasLayers = this.state.cropLayers.length > 0;
       const cropDispOrder = this.state.cropLayers.slice().reverse();
       const cropDragIdx = this.state.cropDragLayerIdx;
@@ -3084,7 +3097,9 @@ class Component extends DCLogic {
         } else if (d.type === 'rotate') {
           const p = stToViewport(e);
           const ang = Math.atan2(p.y - c2.cy, p.x - c2.cx) * 180 / Math.PI;
-          this.setState({ stCrop: { ...c2, rot: d.startRot + (ang - d.startAng) } });
+          let nrot = d.startRot + (ang - d.startAng);
+          if (e.shiftKey) nrot = Math.round(nrot / 45) * 45;
+          this.setState({ stCrop: { ...c2, rot: nrot } });
         }
       };
       vals.stOnCropUp = () => {
