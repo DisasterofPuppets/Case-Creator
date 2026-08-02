@@ -19,6 +19,9 @@ cover only what differs.
 |`CaseLookup.dc.html`|for lookup only|The read-only app.|
 |`support.js`|yes|Runtime. Must sit next to the HTML.|
 |`Cases/*.zip`|yes|Your case data — see below.|
+|`Cases/index.html`|HA only|File list for servers with no directory index.|
+|`Cases/make-index.bat`|no|Windows helper that regenerates `index.html`. Local use only.|
+|`Cases/make-index.ps1`|no|Does the actual work; the `.bat` calls it.|
 
 ## Where case data comes from
 
@@ -34,7 +37,8 @@ If nothing loads at all, the last cached copy in that browser is shown with a wa
 
 **Directory listing required.** Folder discovery works because the web server returns
 an index for `Cases/`. Python's `http.server` does this by default. Home Assistant's
-`/local/` does **not** — see the HA section below.
+`/local/` does **not** — there you supply a hand-built `Cases/index.html` instead.
+See the HA section below.
 
 ## Running the server locally (Windows)
 
@@ -79,10 +83,46 @@ Add it to a dashboard via Settings → Dashboards → **+ Add Dashboard** → *W
 URL `/local/casecreator/CaseCreator.dc.html` (swap in `CaseLookup.dc.html` as needed).
 `panel_iframe:` in YAML was removed from recent HA versions — use the UI.
 
-**`/local/` serves no directory index**, so automatic folder loading fails there.
-Fix it by serving the `Cases/` folder from something that does list directories —
-NGINX Proxy Manager, or a small Python server on the Pi — and pointing `casesFolder`
-in the HTML at that URL.
+### Cases/index.html (required on HA)
+
+**`/local/` serves no directory index** — requesting `/local/casecreator/Cases/`
+returns `403`. The app handles this: if the folder itself can't be listed it retries
+`Cases/index.html` and reads the file list from there.
+
+So HA needs an `index.html` inside `Cases/` listing every zip:
+
+```html
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Cases</title></head>
+<body>
+<h1>Index of Cases/</h1>
+<ul>
+  <li><a href="Hardware-9x6.zip">Hardware-9x6.zip</a></li>
+  <li><a href="Craft-9x6.zip">Craft-9x6.zip</a></li>
+</ul>
+</body>
+</html>
+```
+
+Only `.zip` links are read; the heading and anything else is ignored.
+
+**Generating it.** Don't hand-write this. Keep `make-index.bat` and
+`make-index.ps1` in your **local** `Cases/` folder, double-click the `.bat`, and it
+writes `index.html` from whatever zips are present — percent-encoding `&`, spaces
+and other awkward characters correctly. Then copy `index.html` up to the HA
+`Cases/` folder along with any new zips.
+
+**Regenerate every time you add, rename or delete a zip.** A stale index fails
+silently — the missing case simply won't appear, with no error, because the index
+still parses fine. If a case goes missing, regenerate before debugging anything else.
+
+The scripts are Windows-only and are development tools — there's no need to copy
+them to Home Assistant, only the `index.html` they produce.
+
+Alternatively, skip all of this by serving `Cases/` from something that does list
+directories — NGINX Proxy Manager, or a small Python server on the Pi — and pointing
+`casesFolder` in the HTML at that URL.
 
 ## Sign in
 
@@ -127,9 +167,15 @@ a mouse — do authoring on a desktop.
 
 ## Troubleshooting
 
-**`HTTP 404` listing `Cases/`** — the path is wrong relative to the served root, or
-the server doesn't list directories. Open `http://<host>/Cases/` in a browser: you
-should see a file list. Names are case-sensitive.
+**`HTTP 404` or `403` listing `Cases/`** — the path is wrong relative to the served
+root, or the server doesn't list directories. Open `http://<host>/Cases/` in a
+browser: you should see a file list. Names are case-sensitive. On Home Assistant a
+`403` here is normal — check `http://<host>/local/casecreator/Cases/index.html`
+loads instead.
+
+**A case is missing on HA but present locally** — `Cases/index.html` is stale.
+Re-run `make-index.bat` locally and copy the new `index.html` up. This failure is
+silent; nothing is logged.
 
 **`NetworkError`** — you opened the HTML by double-clicking it (`file://`). Browsers
 block reading local files that way; it must be served over HTTP.

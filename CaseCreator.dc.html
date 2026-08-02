@@ -1438,7 +1438,13 @@ class Component extends DCLogic {
   cfgFolder() { let f = String(this.props.casesFolder || './Cases/'); if (!f.endsWith('/')) f += '/'; return f; }
   async listZipsInFolder() {
     const folder = this.cfgFolder();
-    const res = await fetch(folder, { cache: 'no-store' });
+    let res = await fetch(folder, { cache: 'no-store' });
+    if (!res.ok || !/text\/html/i.test(res.headers.get('content-type') || '')) {
+      // Servers with no directory index (Home Assistant /local/) 403 or 404 on the
+      // folder itself — retry the hand-maintained index.html inside it.
+      const alt = await fetch(folder + 'index.html', { cache: 'no-store' }).catch(() => null);
+      if (alt && alt.ok) res = alt;
+    }
     if (!res.ok) throw new Error('HTTP ' + res.status + ' listing ' + folder);
     const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
     const names = [];
@@ -2607,9 +2613,11 @@ class Component extends DCLogic {
         dot: { width: '10px', height: '10px', borderRadius: '3px', background: this.levelColor(c, b.levels[0] || 0), display: 'inline-block', flexShrink: 0 },
         hasNoteMatch: !!noteMatch, matchedNotesSnippet,
         thumb, grid, show3d, threeD,
-        onHoverOn: () => this.setState({ searchHoverIdx: i }),
-        onHoverOff: () => this.setState(s => s.searchHoverIdx === i ? { searchHoverIdx: -1 } : null),
-        go: () => this.setState({ tab: 'map', mapCaseId: c.id })
+        onHoverOn: () => { if (!st.narrow) this.setState({ searchHoverIdx: i }); },
+        onHoverOff: () => { if (!st.narrow) this.setState(s2 => s2.searchHoverIdx === i ? { searchHoverIdx: -1 } : null); },
+        go: st.narrow
+          ? () => this.setState(s2 => ({ searchHoverIdx: s2.searchHoverIdx === i ? -1 : i }))
+          : () => this.setState({ tab: 'map', mapCaseId: c.id })
       };
     });
     const totalBins = savedCases.reduce((n, c) => n + c.bins.length, 0);
@@ -2657,9 +2665,11 @@ class Component extends DCLogic {
         emptyResults.push({
           caseName: c.name, levels, grid,
           threeD: this.buildCaseEmptyScene(c, st.emptyHoverIdx === eIdx),
-          onHoverOn: () => this.setState({ emptyHoverIdx: eIdx }),
-          onHoverOff: () => this.setState(s => s.emptyHoverIdx === eIdx ? { emptyHoverIdx: -1 } : null),
-          go: () => this.setState({ tab: 'map', mapCaseId: c.id })
+          onHoverOn: () => { if (!st.narrow) this.setState({ emptyHoverIdx: eIdx }); },
+          onHoverOff: () => { if (!st.narrow) this.setState(s2 => s2.emptyHoverIdx === eIdx ? { emptyHoverIdx: -1 } : null); },
+          go: st.narrow
+            ? () => this.setState(s2 => ({ emptyHoverIdx: s2.emptyHoverIdx === eIdx ? -1 : eIdx }))
+            : () => this.setState({ tab: 'map', mapCaseId: c.id })
         });
       });
     }
