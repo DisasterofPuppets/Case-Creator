@@ -1,15 +1,52 @@
 # Case Creator + Case Lookup
 
-Two apps that share one folder of case data.
+Visual inventory for physical storage cases. Draw the bins the way they actually sit
+in the case, label them, and find any part later by name, label, or note — with a 2D
+grid and a 3D view showing exactly where it lives.
 
-* **Case Creator** (`CaseCreator.dc.html`) — full authoring: build cases, edit bins
-and levels, edit thumbnails, search, and view cases in 2D/3D.
-* **Case Lookup** (`CaseLookup.dc.html`) — read-only terminal: search and browse only.
+Two single-file browser apps that share one folder of case data. No build step, no
+database, no server code — just static files.
 
-Both read the same `Cases/*.zip` files and use the same login. You can deploy either
-one alone, or both side by side in the same folder. Everything from **Files** down to
-**Troubleshooting** applies to both; the two short app-specific sections at the end
-cover only what differs.
+![Search results](screenshots/search.png)
+
+| | |
+|-|-|
+| **Case Creator** (`CaseCreator.dc.html`) | Full authoring — build cases, edit bins and levels, edit thumbnails, search, browse in 2D/3D. |
+| **Case Lookup** (`CaseLookup.dc.html`) | Read-only terminal — search and browse only. |
+
+Deploy either alone, or both side by side in the same folder. Everything from
+**Files** down to **Troubleshooting** applies to both; the app-specific sections at
+the end cover only what differs.
+
+---
+
+## Contents
+
+- [Quick start](#quick-start)
+- [Files](#files)
+- [Where case data comes from](#where-case-data-comes-from)
+- [Search](#search)
+- [Running the server locally (Windows)](#running-the-server-locally-windows)
+- [Running on Home Assistant](#running-on-home-assistant)
+- [Access and security](#access-and-security)
+- [Mobile](#mobile)
+- [Troubleshooting](#troubleshooting)
+- [Case Creator — specifics](#case-creator--specifics)
+- [Case Lookup — specifics](#case-lookup--specifics)
+
+---
+
+---
+
+## Quick start
+
+1. Put `CaseCreator.dc.html`, `CaseLookup.dc.html` and `support.js` in a folder.
+2. Create a `Cases/` subfolder next to them and drop your case `.zip` files in.
+3. Serve the folder over HTTP — `python -m http.server 6040` is enough.
+4. Open `http://localhost:6040/CaseCreator.dc.html`.
+
+The apps must be served over HTTP. Opening the HTML by double-clicking it (`file://`)
+will not work — see [Troubleshooting](#troubleshooting).
 
 ## Files
 
@@ -18,6 +55,7 @@ cover only what differs.
 |`CaseCreator.dc.html`|for authoring|The full app.|
 |`CaseLookup.dc.html`|for lookup only|The read-only app.|
 |`support.js`|yes|Runtime. Must sit next to the HTML.|
+|`index.html`|no|Landing page linking to both apps.|
 |`Cases/*.zip`|yes|Your case data — see below.|
 |`Cases/index.html`|HA only|File list for servers with no directory index.|
 |`Cases/make-index.bat`|no|Windows helper that regenerates `index.html`. Local use only.|
@@ -38,7 +76,23 @@ If nothing loads at all, the last cached copy in that browser is shown with a wa
 **Directory listing required.** Folder discovery works because the web server returns
 an index for `Cases/`. Python's `http.server` does this by default. Home Assistant's
 `/local/` does **not** — there you supply a hand-built `Cases/index.html` instead.
-See the HA section below.
+See the [Home Assistant](#running-on-home-assistant) section.
+
+## Search
+
+Search matches bin **labels** and bin **notes**, across every case at once.
+
+**Notes are treated as a parts list.** A note split by commas or newlines is indexed
+per entry, and each matching entry becomes its own result row — so a bin whose notes
+list 34 components behaves like 34 searchable parts. The matching entry is shown in
+quotes after the bin name and highlighted in the result.
+
+**Plurals are handled.** Searching `resistors` finds `Resistor`, `fuses` finds `Fuse`,
+`batteries` finds `Battery`, `boxes` finds `Box`. Only the last word of the query is
+varied, so `red leds` still finds `Red LED`. Matching is case-insensitive.
+
+Irregular plurals (`feet`, `dice`, `mice`) are not covered — the rules are
+suffix-based, not a dictionary.
 
 ## Running the server locally (Windows)
 
@@ -47,7 +101,7 @@ See the HA section below.
 From a Command Prompt (`Win+R` → `cmd`) — not the Python interpreter:
 
 ```
-python -m http.server 6040 --directory "K:\path\to\casecreator"
+python -m http.server 6040 --directory "D:\path\to\casecreator"
 ```
 
 Then open `http://localhost:6040/CaseCreator.dc.html`
@@ -58,16 +112,30 @@ Reachable from your phone on the same Wi-Fi at `http://<pc-ip>:6040/CaseCreator.
 
 ### Start it automatically
 
-Save as `start-cases.bat` and put a shortcut to it in `shell:startup`:
+Create a .bat file:
 
-```bat
+Open your favourite text editor, paste in the below:
+
+```
 @echo off
-python -m http.server 6040 --directory "K:\path\to\casecreator"
+python -m http.server 6040 --directory "D:\Your_Case_Folder_Location"
+
+@don't forget to Save the start-caselookup.vbs, shortcut it into shell:startup
 ```
 
-For a server that runs before login, use Task Scheduler instead: trigger *At startup*,
+Save it as CaseCreator.bat, make note of where you save it, you will need it for the next step.
+
+Again, in a new text editor, paste in the below:
+
+CreateObject("WScript.Shell").Run """D:\\Path_To_Your_Bat\CaseCreator.bat""", 0, False
+
+Save as `start-cases.vbc` or whatever your whim for naming strikes at the time, copy the file
+Pres the Windows Key and R, (or Start > Run) and enter shell:startup
+Paste the file in the new window.
+
+For a server that runs before login, use Task Scheduler (%windir%\system32\taskschd.msc /s) instead: trigger *At startup*,
 action *Start a program* → `python`, arguments
-`-m http.server 6040 --directory "K:\path\to\casecreator"`, and enable
+`-m http.server 6040 --directory "D:\CaseCreator_Directory_Path\casecreator"`, and enable
 "Restart if the task fails".
 
 ## Running on Home Assistant
@@ -82,6 +150,10 @@ http://homeassistant.local:8123/local/casecreator/CaseCreator.dc.html
 Add it to a dashboard via Settings → Dashboards → **+ Add Dashboard** → *Webpage*,
 URL `/local/casecreator/CaseCreator.dc.html` (swap in `CaseLookup.dc.html` as needed).
 `panel_iframe:` in YAML was removed from recent HA versions — use the UI.
+
+> **Dashboard URLs are not folders.** A dashboard at `/case-creator/` is handled by
+> HA's frontend router, so `/case-creator/Cases/index.html` returns the dashboard app,
+> not your file. Always test the `/local/...` path.
 
 ### Cases/index.html (required on HA)
 
@@ -124,43 +196,28 @@ Alternatively, skip all of this by serving `Cases/` from something that does lis
 directories — NGINX Proxy Manager, or a small Python server on the Pi — and pointing
 `casesFolder` in the HTML at that URL.
 
-## Sign in
+## Access and security
 
-**Default credentials: `admin` / `admin`**
+**There is no login.** Both apps open straight into the interface, and anyone who can
+reach the URL can read — and in Case Creator, edit — the data.
 
-Stored in the HTML as one base64 string of `username:password` — currently
-`YWRtaW46YWRtaW4=` — so the password isn't sitting in the file as plain text.
-"Keep me signed in" stores the credential on that device.
+This is deliberate. A login implemented in the page is decorative: the browser already
+holds the data before any check runs, and the case zips can be fetched directly from
+their URLs regardless. It offered no protection while adding a step to every visit.
 
-### Changing the credentials
-
-1. Open any browser, press `F12`, go to the **Console** tab.
-2. Run `btoa('newuser:newpassword')` with your own values.
-3. Copy the quoted result, e.g. `bmV3dXNlcjpuZXdwYXNzd29yZA==`.
-4. Search the HTML for `YWRtaW46YWRtaW4=` and replace **both** occurrences — one in
-the `data-props` attribute, one in `cfgCred()`. Do this in each app you deploy.
-
-After changing it, sign out on every device where you used "Keep me signed in" — the
-saved token no longer matches and login will fail until you do.
-
-### What this protects (and what it doesn't)
-
-Base64 is encoding, not encryption — `atob('YWRtaW46YWRtaW4=')` reverses it instantly.
-It keeps the password off the screen in View Source; it is not security.
-
-More importantly, **any login that runs in the browser is decorative**: the page
-already holds the data before the check happens, and the case zips can be fetched
-straight from their URLs without ever seeing the login screen.
-
-So: never put a password you use elsewhere in here. Treat this as a "keep the
-household out of it" gate, not access control. For real protection, put the folder
-behind NGINX Proxy Manager basic auth or another server-side login.
+If the apps need to be reachable from outside your network, put real authentication in
+front of the folder — NGINX Proxy Manager basic auth, Authelia, a Cloudflare Access
+policy, or a VPN. That is server-side and actually enforces something.
 
 ## Mobile
 
 Single-column layout on phones, 16px inputs (prevents iOS zoom), 44–50px touch
 targets, no horizontal page overflow. Search results stack thumbnail → grid → 3D
 vertically. Case Creator switches at 760px with a two-column nav; Case Lookup at 720px.
+
+On narrow screens the 3D views are tap-to-toggle rather than always-on, so idle
+results don't re-render — tapping a result opens its 3D view instead of navigating
+away.
 
 The Case Creator and Thumbnail Editor tabs are usable on a tablet but are designed for
 a mouse — do authoring on a desktop.
@@ -203,6 +260,40 @@ Authoring app. Everything Case Lookup does, plus creating and editing cases.
 |Cases Folder|Folder status, skipped zips, and a **Reload from folder** button.|
 |Thumbnail Editor|Crop, layer, and edit case and bin images.|
 |Help|In-app guide with animated demos.|
+
+## Thumbnail editor
+
+Every case and every bin can carry its own image. The thumbnail editor is a small
+layered image editor built into Case Creator — no external tool needed to crop a
+product photo down to something that reads at 100px.
+
+![Thumbnail editor](screenshots/thumbnail-editor.png)
+
+Open it three ways: the **Thumbnail Editor** tab, clicking a bin's image in the case
+properties panel, or the edit button on an existing thumbnail. Dropping an image
+straight onto a bin opens it too.
+
+|Control|What it does|
+|-|-|
+|Select / move|Move, scale and rotate the active layer. Drag a corner handle to rotate; hold `Shift` to snap to 45°.|
+|Fill area|Flood-fill with the current colour — useful for knocking out a background.|
+|Selection|Rectangular marquee.|
+|Freehand selection|Lasso an irregular shape.|
+|Delete selection|Clears the selected area of the active layer.|
+|Colour swatch|Sets the fill colour.|
+|Undo / redo|`Ctrl+Z` / `Ctrl+Y`.|
+|Zoom / default view|Zoom in and out; **Default view** resets zoom and pan.|
+|Import image|Adds a file as a new layer.|
+
+**Layers** stack in the panel on the right — drag to reorder, click the eye to hide,
+the bin to delete. Paste (`Ctrl/Cmd+V`) adds whatever is on the clipboard as a new
+layer, so you can build a thumbnail from several photos.
+
+Pasted and imported images are scaled to **fit inside** the canvas rather than filling
+it, so nothing is silently cropped on the way in.
+
+**Save Thumbnail** writes the flattened result back to the case or bin you opened it
+from. It's stored inside that case's zip, so it travels with the case.
 
 ## Saving a case
 
