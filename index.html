@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Case Inventory</title>
+<!--
+  Landing page. Both apps open straight in - there is no sign-in.
+  See "Access and security" in README.md.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing: border-box; }
+  body{
+    margin:0; min-height:100vh; padding:24px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px;
+    background:#f7f2e8; color:#1c1814;
+    font-family:'Roboto Condensed',system-ui,sans-serif;
+  }
+  h1{
+    margin:0; font-family:'Archivo',system-ui,sans-serif; font-weight:800;
+    font-size:clamp(26px,6vw,40px); letter-spacing:-0.5px; text-align:center;
+  }
+  p.sub{ margin:0; color:#7a6f61; font-size:16px; text-align:center; max-width:34ch; }
+  .grid{ display:grid; gap:16px; width:100%; max-width:680px; grid-template-columns:1fr; }
+  @media (min-width:620px){ .grid{ grid-template-columns:1fr 1fr; } }
+  a.card{
+    display:flex; flex-direction:column; gap:8px; min-height:150px;
+    padding:22px; border:1px solid #d9cdba; border-radius:12px;
+    background:#fff; color:inherit; text-decoration:none;
+    transition:border-color .15s, transform .15s, box-shadow .15s;
+  }
+  a.card:hover, a.card:focus-visible{
+    border-color:#e85d1f; transform:translateY(-2px);
+    box-shadow:0 6px 18px rgba(28,24,20,.10); outline:none;
+  }
+  .name{ font-family:'Archivo',sans-serif; font-weight:800; font-size:21px; }
+  .desc{ color:#7a6f61; font-size:15px; line-height:1.45; text-wrap:pretty; }
+  .tag{
+    margin-top:auto; align-self:flex-start; padding:3px 9px; border-radius:20px;
+    font-size:12px; font-weight:700; letter-spacing:.4px; text-transform:uppercase;
+  }
+  .tag.edit{ background:#fdece3; color:#e85d1f; }
+  .tag.read{ background:#eaf4ec; color:#2f9e44; }
+</style>
+</head>
+<body>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+    <h1>Case Inventory</h1>
+    <p class="sub">Pick an app. Both read the same Cases folder.</p>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="CaseLookup.dc.html">
+      <span class="name">Case Lookup</span>
+      <span class="desc">Search parts and notes, and see exactly which case, layer and position they sit in.</span>
+      <span class="tag read">Read only</span>
+    </a>
+    <a class="card" href="CaseCreator.dc.html">
+      <span class="name">Case Creator</span>
+      <span class="desc">Build and edit cases, lay out bins, set thumbnails and notes, then save a case zip.</span>
+      <span class="tag edit">Full editing</span>
+    </a>
+  </div>
+</body>
+</html>

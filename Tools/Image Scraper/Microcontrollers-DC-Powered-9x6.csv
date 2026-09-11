@@ -1,0 +1,26 @@
+#case,Microcontrollers DC Powered,9,6
+#levels,Top;Bottom
+#hindex,letter,A,false
+#vindex,number,1,false
+id,label,row,col,rowSpan,colSpan,levels,notes,image
+b1785455475229u9gz,,4,3,2,4,1,Teensy & LCD / LED Screens,
+Pro-Micro,Pro Micro,5,3,1,1,0,,
+5V-Steppers,5V Steppers,5,4,1,2,0,,
+Esp8266-Shields,Esp8266 & Shields,1,1,1,2,0;1,,
+PCA9685-Boards,PCA9685 Boards,1,3,1,2,0;1,,
+MG90S-180-Degrees,MG90S 180 Degrees,1,5,1,2,0;1,,
+L298N-Stepper-Drivers,L298N Stepper Drivers,1,7,1,2,0;1,,
+DC-Motor-Drivers,DC Motor Drivers,1,9,1,1,0;1,,
+Nano-Shields,Nano Shields,2,1,1,2,0;1,,
+Misc-Servo-Parts,Misc Servo Parts,2,3,1,2,0;1,,
+MG966R-Horns,MG966R Horns,2,5,1,1,0;1,,
+9G-Servos,9G Servos,2,6,1,1,0;1,,
+MG90S-360-Degrees,MG90S 360 Degrees,3,6,1,1,0;1,,
+Misc-Servo,Misc Servo,3,5,1,1,0;1,,
+ESP32-Shields,ESP32 & Shields,3,2,1,3,0;1,,
+Nano,Nano,3,1,1,1,0;1,,
+Uno-Shields,Uno & Shields,4,1,2,2,0;1,,
+ESP32-2432S028-Cheap-Yellow-Displays,ESP32-2432S028 Cheap Yellow Displays,6,1,1,3,0;1,,
+Board-Pins,Board Pins,6,4,1,3,0;1,,
+10-Pin-Connectors,10 Pin Connectors,5,7,2,3,0;1,,
+DC-Motors,DC Motors,2,7,3,3,0;1,,
