@@ -1732,17 +1732,58 @@ narrow: false,
   }
   /** The Cases folder as path segments below the granted root, e.g. ['Cases']. */
   casesSeg() { return this.cfgFolder().replace(/^\.\//, '').replace(/\/+$/, '').split('/').filter(Boolean); }
-  async rootHandle(interactive) {
-    if (!window.showDirectoryPicker) return null;
-    let h = this._rootHandle;
-    if (!h) { try { h = await this.idb('readonly', (s) => s.get('root')); } catch (e) { h = null; } }
-    if (h) {
-      let p = 'denied';
-      try { p = await h.queryPermission({ mode: 'readwrite' }); } catch (e) { p = 'denied'; }
-      if (p !== 'granted' && interactive) { try { p = await h.requestPermission({ mode: 'readwrite' }); } catch (e) { p = 'denied'; } }
-      if (p === 'granted') { this._rootHandle = h; return h; }
+  /* Prove the granted folder really is the folder this page is served from.
+     The folder NAME in the browser's permission prompt is not enough - two
+     copies of the project can share a name, and a saved grant survives the
+     server being repointed somewhere else entirely. So: write a random token
+     through the handle, then try to read it back over HTTP. Only the served
+     folder can satisfy both. The probe file is removed either way. */
+  PROBE_FILE = '.casecreator-folder-check';
+  async servesThisFolder(h) {
+    const token = 'cc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    try {
+      const fh = await h.getFileHandle(this.PROBE_FILE, { create: true });
+      const w = await fh.createWritable();
+      await w.write(token);
+      await w.close();
+    } catch (e) {
+      return { ok: false, why: 'a test file could not be written into it (' + e.message + ')' };
     }
-    if (!interactive) return null;
+    let served = null;
+    try {
+      const res = await fetch('./' + this.PROBE_FILE + '?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) served = (await res.text()).trim();
+    } catch (e) {}
+    try { await h.removeEntry(this.PROBE_FILE); } catch (e) {}
+    if (served === token) return { ok: true };
+    return { ok: false, why: served === null
+      ? 'the server cannot see a file written into it, so it is serving a different folder'
+      : 'the server returned different content from it, so it is serving a different folder' };
+  }
+  /** repick: always show the picker, ignoring any saved grant. The Re-grant
+      button passes it so the folder can actually be changed - without it a
+      still-valid saved grant short-circuits and the picker never appears. */
+  async rootHandle(interactive, repick) {
+    if (!window.showDirectoryPicker) return null;
+    if (!repick) {
+      if (this._rootHandle) return this._rootHandle;   // already verified this session
+      let h = null;
+      try { h = await this.idb('readonly', (s) => s.get('root')); } catch (e) { h = null; }
+      if (h) {
+        let p = 'denied';
+        try { p = await h.queryPermission({ mode: 'readwrite' }); } catch (e) { p = 'denied'; }
+        if (p !== 'granted' && interactive) { try { p = await h.requestPermission({ mode: 'readwrite' }); } catch (e) { p = 'denied'; } }
+        if (p === 'granted') {
+          const v = await this.servesThisFolder(h);
+          if (v.ok) { this._rootHandle = h; return h; }
+          this._rootReject = 'The saved folder is no longer the one being served - ' + v.why
+            + '. Click Grant folder access and pick the folder this page comes from.';
+          return null;
+        }
+      }
+      if (!interactive) return null;
+    }
+    let h;
     try { h = await window.showDirectoryPicker({ id: 'ccroot', mode: 'readwrite' }); } catch (e) { return null; }
     // Reject the wrong folder before caching it. Reads come over HTTP from the
     // served folder while writes go to whatever was picked here, so a mismatch
@@ -1751,6 +1792,12 @@ narrow: false,
       this._rootReject = 'That is not the folder the app is served from - it has no '
         + 'CaseCreator.dc.html and no ' + (this.casesSeg()[0] || 'Cases') + ' subfolder. '
         + 'Pick the folder one level up, the one holding both.';
+      return null;
+    }
+    const v = await this.servesThisFolder(h);
+    if (!v.ok) {
+      this._rootReject = 'That folder is not the one this page is served from - ' + v.why
+        + '. Pick the folder the server has open.';
       return null;
     }
     this._rootHandle = h;
@@ -1801,7 +1848,7 @@ narrow: false,
       return;
     }
     this._rootReject = '';
-    const h = await this.rootHandle(true);
+    const h = await this.rootHandle(true, true);   // always re-open the picker
     this.setState({
       fsGranted: !!h,
       fsStatus: h ? 'Granted. Cases, backups and orphaned bins now write straight to the folder.'
@@ -1809,12 +1856,14 @@ narrow: false,
     });
   }
   async checkFolderAccess() {
+    this._rootReject = '';
     const h = await this.rootHandle(false);
     this.setState({
       fsGranted: !!h,
       fsStatus: h ? 'Granted.'
-        : (window.showDirectoryPicker ? 'Not granted yet - saving falls back to downloads.'
-                                      : this.fsUnavailableReason())
+        : (this._rootReject || (window.showDirectoryPicker
+            ? 'Not granted yet - saving falls back to downloads.'
+            : this.fsUnavailableReason()))
     });
   }
 

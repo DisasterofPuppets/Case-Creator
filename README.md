@@ -128,43 +128,41 @@ Reachable from your phone on the same Wi-Fi at `http://<pc-ip>:6040/CaseCreator.
 
 ### Start it automatically
 
-A one-line VBScript launches the server invisibly; Task Scheduler runs that script at
-logon. The VBScript exists only to hide the console window — `wscript.exe` has no
-window of its own, so nothing flashes up and nothing sits in the taskbar.
+Task Scheduler runs a small **pure-PowerShell** launcher directly — no VBScript, no
+Python needed for this. (VBScript is deprecated in Windows and can silently fail to
+fire when Task Scheduler triggers it at the SYSTEM level; running `powershell.exe`
+with `-WindowStyle Hidden` needs no VBS wrapper to stay invisible.)
 
-**1. Create the launcher.** Save this as `CaseServer_Port_6040.vbs`, somewhere outside
-the served folder — a `Server Scripts` folder beside it works well:
+**1. Drop `CaseCreator_Server_Port_6040.ps1` into this folder.** It's a self-contained
+static file server built on `System.Net.HttpListener` — serves this folder over HTTP,
+no Python install required. It logs to `caseserver.log` / `caseserver.err.log` beside
+itself.
 
-```vbscript
-CreateObject("WScript.Shell").Run "cmd /c python -m http.server 6040 --directory ""K:\WIP Projects\Case Creator REDUX"" > ""K:\WIP Projects\Server Scripts\caseserver.log"" 2>&1", 0, False
+**One-time setup required — a URL reservation.** `HttpListener` bound to `+` (all
+interfaces, so the server is reachable from other devices, not just this PC) needs
+Windows' permission the first time, or it fails immediately with "Access Denied" when
+run as a normal user (which the scheduled task does). Run this **once**, as
+Administrator:
+
+```powershell
+netsh http add urlacl url=http://+:6040/ user=Everyone
 ```
 
-Swap both paths for your own. Reading it left to right:
-
-|Part|Why|
-|-|-|
-|`cmd /c`|`WScript.Shell.Run` cannot redirect output on its own. Wrapping in `cmd` is what makes `>` work.|
-|`""..."" `|Doubled quotes escape a quote inside a VBScript string. Required — both paths contain spaces.|
-|`> ...caseserver.log 2>&1`|Captures stdout **and** errors. Without it a failed start is completely silent.|
-|`, 0,`|Window style 0 — hidden. No console, no taskbar entry.|
-|`, False`|Do not wait for it to exit. The script ends immediately; the server keeps running.|
-
-The log is truncated each time the task runs, so it holds the current session only. It
-records every HTTP request, so it grows while the machine is up — harmless, but it is
-the first place to look if a page will not load.
+Skip this if you only need `http://localhost:6040/` on the same machine — swap
+`http://+:6040/` for `http://localhost:6040/` inside the script and this step isn't
+needed, but then it won't be reachable from your phone or other devices on the LAN.
 
 **2. Create the scheduled task.** `Win+R` → `taskschd.msc` → **Create Basic Task**.
-The wizard is four screens:
 
 |Screen|Enter|
 |-|-|
-|Name|Something you will recognise, e.g. *CaseLookup Server Startup*. The description field is optional.|
+|Name|Something you will recognise, e.g. *CaseLookup Server Startup*.|
 |Trigger|**When I log on**|
 |Action|**Start a program**|
-|Start a Program|Program/script: `wscript.exe` &nbsp;&nbsp; Add arguments: `"K:\WIP Projects\Server Scripts\CaseServer_Port_6040.vbs"` — quoted, because the path contains spaces. Leave *Start in* blank.|
+|Start a Program|Program/script: `powershell.exe` &nbsp;&nbsp; Add arguments: `-WindowStyle Hidden -ExecutionPolicy Bypass -File "K:\WIP Projects\Case Creator REDUX\CaseCreator_Server_Port_6040.ps1"`|
 
 On the final screen tick **Open the Properties dialog for this task when I click
-Finish**, because the wizard does not expose the two settings that matter.
+Finish** — the wizard doesn't expose the settings that matter.
 
 **3. Fix the settings the wizard cannot reach.** In the Properties dialog:
 
@@ -191,7 +189,10 @@ If you closed the wizard without ticking the Properties box, right-click the tas
 the Task Scheduler Library and choose **Properties** — same dialog.
 
 **4. Test it** without rebooting: right-click the task → **Run**, then open
-`http://localhost:6040/`. If nothing responds, open `caseserver.log`.
+`http://localhost:6040/`. If nothing responds, check `caseserver.log` /
+`caseserver.err.log` beside the `.ps1`. A missing `caseserver.err.log` plus no response
+usually means the urlacl reservation (step 1) hasn't been done — the listener fails to
+bind and exits before logging anything to `caseserver.log`.
 
 **Verifying the time limit actually stuck** — export the task (right-click → *Export*)
 and open the XML. You want:
@@ -202,8 +203,11 @@ and open the XML. You want:
 
 `PT0S` means no limit. If you see `P3D` the box is still ticked.
 
-**To stop the server**, end the `python.exe` process in Task Manager — the task has
-already exited by then, so stopping the *task* does nothing.
+**To stop the server**: the scheduled task launches `powershell.exe` running the
+listener directly (no child process, unlike the old Python version) — end that
+`powershell.exe` process in Task Manager. If you have other PowerShell windows open,
+check the **Command line** column (Task Manager → Details → right-click header →
+Select columns) to find the one referencing `CaseCreator_Server_Port_6040.ps1`.
 
 ## Running Case Lookup on Home Assistant (optional)
 
@@ -427,10 +431,31 @@ written in the background, on a timer, or on page load.
 |`<install>/Backup/<Case Name>_dd_mm_yyyy.bak`|The copy that was on disk *before* the overwrite. Written first, so the previous state is safe before anything is replaced. Skipped if the case has never been saved.|
 |`<install>/OrphanedBins/OrphanedBins.zip`|Only when parked bins are flushed and you confirm the warning. Merged with what is already there; nothing is removed.|
 |`<install>/Cases/index.html`|Rebuilt from the zips actually present, so the file list can never go stale.|
+|`<install>/.casecreator-folder-check`|Temporary, deleted straight away. See [The folder check](#the-folder-check).|
 
 **Writes are confined to the folder you granted and its subfolders.** The browser
 enforces this, not the app - there is no way for it to reach anything else on the disk,
 including the rest of the drive the folder sits on.
+
+### The folder check
+
+One extra write, worth explaining because it is the only file the app creates that is
+not yours: `.casecreator-folder-check` in the install directory.
+
+The browser's permission prompt names the folder you picked, but only its **name** -
+`Case Creator REDUX`, not its path. Two copies of the project share a name, and a saved
+grant outlives the server being repointed at a different folder entirely. Get that wrong
+and the app reads cases over HTTP from one folder while writing saves and backups into
+another, silently.
+
+So before trusting a folder, the app writes a random token into that file through the
+folder handle, then tries to fetch the same file over HTTP. Only the folder the server
+is actually serving can satisfy both. The file is deleted immediately either way, and
+the grant is refused if the check fails.
+
+This runs when you click **Grant folder access**, and once per session against a saved
+grant. If you ever see a stray `.casecreator-folder-check`, the delete failed - it is
+inert, delete it.
 
 ### Reads from disk - Case Creator only, folder access granted
 
@@ -439,6 +464,7 @@ including the rest of the drive the folder sits on.
 |`<install>/Cases/<Case Name>.zip`|**Save Case** - read so it can be copied to `Backup/`.|
 |`<install>/OrphanedBins/OrphanedBins.zip`|**Show Orphaned Parts**, and **Save Case** when merging parked bins.|
 |`<install>/Cases/` (listing)|**Save Case** - enumerated to rebuild `index.html`. Filenames only; the zips are not opened.|
+|`<install>/.casecreator-folder-check`|**Grant folder access**, and once per session on the saved grant. A short random token is written, read back over HTTP, then the file is deleted. See below.|
 
 ### Writes without folder access - downloads only
 
@@ -557,11 +583,12 @@ it runs longer than** is still ticked. Create Basic Task sets it to 3 days by de
 and Windows kills the server on schedule, silently. Untick it in the task's Properties
 → Settings tab.
 
-**The server did not start at logon** — open the log the VBScript writes
-(`caseserver.log` beside it). An empty or missing log means the task never ran: check
-Task Scheduler's **Last Run Result** and whether the trigger is *At log on*. A log
-containing `No such file or directory` means the `--directory` path is wrong, or it is
-a mapped drive that was not connected yet.
+**The server did not start at logon** — check `caseserver.log` / `caseserver.err.log`
+beside the `.ps1`. Both missing means the task never ran at all: check Task
+Scheduler's **Last Run Result** and whether the trigger is *At log on*. Task shows
+success (`Last Run Result: 0`) but no logs and nothing listening on the port usually
+means the `netsh http add urlacl` reservation (see "Start it automatically") hasn't
+been run — `HttpListener` fails to bind under a non-admin account without it.
 
 **Cases vanish after reload** — they were never saved into `Cases/`. Save each case
 as a zip and copy it to the folder.
