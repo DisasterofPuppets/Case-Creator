@@ -1175,6 +1175,78 @@ class Component extends DCLogic {
     if (found.file) this.handleBinImage(cs, binId, found.file);
     else this.loadImageForBin(cs, binId, found.url, true);
   }
+  cfgFolder() { let f = String(this.props.casesFolder || './Cases/'); if (!f.endsWith('/')) f += '/'; return f; }
+  async listZipsInFolder() {
+    const folder = this.cfgFolder();
+    let res = await fetch(folder, { cache: 'no-store' });
+    if (!res.ok || !/text\/html/i.test(res.headers.get('content-type') || '')) {
+      // Servers with no directory index (Home Assistant /local/) 403 or 404 on the
+      // folder itself — retry the hand-maintained index.html inside it.
+      const alt = await fetch(folder + 'index.html', { cache: 'no-store' }).catch(() => null);
+      if (alt && alt.ok) res = alt;
+    }
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' listing ' + folder);
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const names = [];
+    doc.querySelectorAll('a[href]').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      if (href.includes('?') || href.startsWith('..')) return;
+      const clean = href.split('#')[0].replace(/\/$/, '');
+      const base = decodeURIComponent(clean.split('/').pop() || '');
+      if (/\.zip$/i.test(base) && !names.includes(base)) names.push(base);
+    });
+    if (!names.length) throw new Error('no .zip files found in ' + folder);
+    names.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return names.map(n => folder + encodeURIComponent(n));
+  }
+  async casesFromZipBuffer(buf, label) {
+    let out = [];
+    try { out = await this.parseCollectionZip(buf) || []; } catch (e) { out = []; }
+    if (!out.length) {
+      try { const one = await this.parseCaseZip(buf); if (one) out = [one]; } catch (e) {}
+    }
+    return out.map(c => (c && !c.name && label) ? { ...c, name: label } : c).filter(Boolean);
+  }
+  async loadMaster() {
+    this.setState({ loading: true, loadError: '' });
+    try {
+      let urls = [];
+      let listErr = '';
+      try { urls = await this.listZipsInFolder(); } catch (e) { listErr = e.message; }
+      const cases = [];
+      const failed = [];
+      for (const url of urls) {
+        try {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const label = decodeURIComponent((url.split('/').pop() || '')).replace(/\.zip$/i, '');
+          const got = await this.casesFromZipBuffer(await res.arrayBuffer(), label);
+          if (!got.length) throw new Error('no cases inside');
+          got.forEach(c => cases.push(c));
+        } catch (e) { failed.push(decodeURIComponent((url.split('/').pop() || url)) + ' (' + e.message + ')'); }
+      }
+      if (!cases.length) throw new Error(listErr || (failed.join('; ') || 'no cases found'));
+      const seen = {};
+      const fixed = cases.map(c => this.repairCase(c)).map(c => {
+        let n = c.name || 'Case';
+        if (seen[n]) { const i = ++seen[n]; n = n + ' (' + i + ')'; } else seen[n] = 1;
+        return { ...c, name: n };
+      });
+      this.persist({ cases: fixed });
+      this.setState({ loading: false, mapCaseId: fixed[0].id,
+        loadError: failed.length ? 'Loaded ' + fixed.length + ' case(s). Skipped: ' + failed.join('; ') + '.' : '' });
+    } catch (e) {
+      let cached = false;
+      try {
+        const raw = localStorage.getItem('cc_cases_v1');
+        if (raw) { const cs = JSON.parse(raw); if (Array.isArray(cs) && cs.length) { this.setState({ data: { cases: cs.map(c => this.repairCase(c)) } }); cached = true; } }
+      } catch (e2) {}
+      this.setState({ loading: false, loadError: cached
+        ? 'Showing the last cached copy — could not read ' + this.cfgFolder() + ' (' + e.message + ').'
+        : 'Could not load any cases from ' + this.cfgFolder() + ' — ' + e.message + '.' });
+    }
+  }
   componentDidMount() {
     this._onResize = () => {
       const n = window.innerWidth < 720;

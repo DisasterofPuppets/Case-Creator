@@ -779,10 +779,32 @@ orphaned bins are written straight to disk with no download prompt.
   secure origin, so `http://cases.home:6040` cannot use it no matter which browser
   you open it in — you get the download fallback and no backups. Author on
   `http://localhost:6040/` and use the hostname for lookups.
-- The permission is remembered, but the browser asks you to reconfirm it once per
-  browser restart — click **Re-grant folder access** and pick the same folder.
 - Without it everything still works, it just downloads instead: you move the files into
   `Cases/`, `Backup/` and `OrphanedBins/` yourself.
+
+### Re-granting after a reload
+
+**The browser drops the grant every time the page loads.** That is the security model
+for a plain HTTP page, not a fault in the app — a site is not allowed to hold silent
+write access to your disk across visits.
+
+So after each reload the status line reads *"Not granted yet"*. Click
+**Grant folder access** once and you get Edge's **Allow** dialog — not the folder
+picker. The folder you chose last time is remembered, so it is a single click.
+
+The picker only reappears when it has to:
+
+|Situation|What you get|
+|-|-|
+|Same folder, still being served|One click, Allow dialog only|
+|The server now serves a different folder|Allow, then the picker, so you can re-point it|
+|Nothing granted before|The picker|
+|You click **Don't Allow**|It stops, and saving falls back to downloads|
+
+**To make it truly persistent** the app would have to be installed as a PWA — Chromium
+keeps file access grants across launches for installed apps. That needs a web manifest
+and a service worker, which is more machinery than a local tool warrants. One click per
+reload is the trade.
 
 ## Saving a case
 

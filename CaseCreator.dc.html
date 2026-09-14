@@ -500,7 +500,7 @@ img,canvas{max-width:100%}
           <button onClick="{{ grantFolder }}" style="{{ grantBtnStyle }}">{{ grantBtnLabel }}</button>
           <div style="font-size:13px;color:#7a6f61">{{ fsStatus }}</div>
         </div>
-        <div style="font-size:12px;color:#a0958a">Needs Chrome or Edge on the desktop, served from localhost or HTTPS. Other browsers and plain-HTTP addresses fall back to ordinary downloads. Permission is remembered, but the browser asks you to reconfirm it once per restart.</div>
+        <div style="font-size:12px;color:#a0958a">Needs Chrome or Edge on the desktop, served from localhost or HTTPS. Other browsers and plain-HTTP addresses fall back to ordinary downloads. The browser drops the grant on every page load, so expect one Allow click per reload - the folder itself is remembered.</div>
       </div>
     </section>
     </sc-if>
@@ -1772,12 +1772,21 @@ narrow: false,
       if (h) {
         let p = 'denied';
         try { p = await h.queryPermission({ mode: 'readwrite' }); } catch (e) { p = 'denied'; }
+        // Reloading the page drops the grant back to 'prompt'. Re-asking on the
+        // SAVED handle is a one-click Allow; opening the picker again would make
+        // the user re-navigate to the same folder on every single reload.
         if (p !== 'granted' && interactive) { try { p = await h.requestPermission({ mode: 'readwrite' }); } catch (e) { p = 'denied'; } }
         if (p === 'granted') {
           const v = await this.servesThisFolder(h);
           if (v.ok) { this._rootHandle = h; return h; }
-          this._rootReject = 'The saved folder is no longer the one being served - ' + v.why
-            + '. Click Grant folder access and pick the folder this page comes from.';
+          // Right permission, wrong folder - the server moved. Fall through to the
+          // picker so it can be re-pointed, rather than dead-ending here.
+          this._rootReject = 'The saved folder is no longer the one being served - ' + v.why + '.';
+          if (!interactive) return null;
+        } else {
+          this._rootReject = interactive
+            ? 'Folder access was not allowed - saving falls back to downloads.'
+            : '';
           return null;
         }
       }
@@ -1848,7 +1857,7 @@ narrow: false,
       return;
     }
     this._rootReject = '';
-    const h = await this.rootHandle(true, true);   // always re-open the picker
+    const h = await this.rootHandle(true);
     this.setState({
       fsGranted: !!h,
       fsStatus: h ? 'Granted. Cases, backups and orphaned bins now write straight to the folder.'
