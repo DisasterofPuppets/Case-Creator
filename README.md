@@ -9,6 +9,15 @@ database, no server code — just static files.
 
 ![Search results](.github/screenshots/search.png)
 
+
+## Disclaimer for AI use
+
+Claude Code was used in part for the creation of these scripts. I have
+tested them and run them on my own personal machine, however, as with any
+code, results may vary, and it is the user's decision to run this without
+prior review. I will not be held accountable for any damage or issues
+arising from its use.
+
 | | |
 |-|-|
 | **Case Creator** (`CaseCreator.dc.html`) | Full authoring — build cases, edit bins and levels, edit thumbnails, search, browse in 2D/3D. |
