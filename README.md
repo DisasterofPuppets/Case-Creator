@@ -1,4 +1,5 @@
-# Case Creator + Case Lookup
+# Case Creator Live
+## Case Creator + Case Lookup
 
 Visual inventory for physical storage cases. Draw the bins the way they actually sit
 in the case, label them, and find any part later by name, label, or note — with a 2D
