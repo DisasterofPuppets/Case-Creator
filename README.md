@@ -1,5 +1,4 @@
-# Case Creator Live
-## Case Creator + Case Lookup
+# Case Creator + Case Lookup
 
 Visual inventory for physical storage cases. Draw the bins the way they actually sit
 in the case, label them, and find any part later by name, label, or note — with a 2D
@@ -10,6 +9,20 @@ database, no server code — just static files.
 
 ![Search results](.github/screenshots/search.png)
 
+| | |
+|-|-|
+| **Case Creator** (`CaseCreator.dc.html`) | Full authoring — build cases, edit bins and levels, edit thumbnails, search, browse in 2D/3D. |
+| **Case Lookup** (`CaseLookup.dc.html`) | Read-only terminal — search and browse only. |
+
+**The intended setup:** run both from one folder on the machine that holds your case
+data, served by the bundled PowerShell server and opened in Edge or Chrome. Optionally publish
+**Case Lookup alone** to Home Assistant as a read-only terminal — Case Creator cannot
+save from there, so it stays local. See
+[Running Case Lookup on Home Assistant](#running-case-lookup-on-home-assistant-optional).
+
+Everything from **Files** down to **Troubleshooting** applies to both apps; the
+app-specific sections at the end cover only what differs.
+
 
 ## Disclaimer for AI use
 
@@ -19,19 +32,6 @@ code, results may vary, and it is the user's decision to run this without
 prior review. I will not be held accountable for any damage or issues
 arising from its use.
 
-| | |
-|-|-|
-| **Case Creator** (`CaseCreator.dc.html`) | Full authoring — build cases, edit bins and levels, edit thumbnails, search, browse in 2D/3D. |
-| **Case Lookup** (`CaseLookup.dc.html`) | Read-only terminal — search and browse only. |
-
-**The intended setup:** run both from one folder on the machine that holds your case
-data, served by a local Python server and opened in Edge or Chrome. Optionally publish
-**Case Lookup alone** to Home Assistant as a read-only terminal — Case Creator cannot
-save from there, so it stays local. See
-[Running Case Lookup on Home Assistant](#running-case-lookup-on-home-assistant-optional).
-
-Everything from **Files** down to **Troubleshooting** applies to both apps; the
-app-specific sections at the end cover only what differs.
 
 ---
 
@@ -54,12 +54,34 @@ app-specific sections at the end cover only what differs.
 
 ## Quick start
 
-1. Put `CaseCreator.dc.html`, `CaseLookup.dc.html` and `support.js` in a folder.
-2. Create a `Cases/` subfolder next to them and drop your case `.zip` files in.
-3. Serve the folder over HTTP — `python -m http.server 6040` is enough.
-4. Open `http://localhost:6040/CaseCreator.dc.html` in **Edge or Chrome** — only
+1. Put `CaseCreator.dc.html`, `CaseLookup.dc.html`, `support.js` and
+   `CaseCreator_Server_Port_6040.ps1` in a folder.
+2. Create a `Cases/` subfolder next to them and drop in your case `.zip` files, if you
+   have any. A first run with an empty folder is fine.
+3. Open `CaseCreator_Server_Port_6040.ps1` in a text editor and set the path at the top
+   to that folder:
+
+   ```powershell
+   $caseDir = "D:\Path\To\Case Creator Live"
+   ```
+
+4. **Start the server** — either way works:
+
+   |Option|How|
+   |-|-|
+   |**Bundled PowerShell server** (recommended)|Right-click `CaseCreator_Server_Port_6040.ps1` → **Run with PowerShell**. No Python needed. To have it start at logon, see [Start it automatically](#start-it-automatically).|
+   |**Python**|`python -m http.server 6040 --directory "D:\Path\To\Case Creator Live"`|
+
+5. Open `http://localhost:6040/CaseCreator.dc.html` in **Edge or Chrome** — only
    those expose the folder-access API Case Creator needs to write to disk, and only
    on `localhost` or HTTPS. Everything else works in any browser.
+6. Go to the **Cases Folder** tab, click **Grant folder access**, and pick the folder
+   from step 1 — the one holding `CaseCreator.dc.html`, not the `Cases` subfolder.
+
+> **The server reads `$caseDir` once, at launch.** Editing the `.ps1` while it is
+> running changes nothing. Close the server and start it again, or the app will keep
+> serving the old folder — and folder access will be refused, because the folder you
+> grant will not be the folder being served.
 
 The apps must be served over HTTP. Opening the HTML by double-clicking it (`file://`)
 will not work — see [Troubleshooting](#troubleshooting).
@@ -71,6 +93,7 @@ will not work — see [Troubleshooting](#troubleshooting).
 |`CaseCreator.dc.html`|for authoring|The full app.|
 |`CaseLookup.dc.html`|for lookup only|The read-only app.|
 |`support.js`|yes|Runtime. Must sit next to the HTML.|
+|`CaseCreator_Server_Port_6040.ps1`|recommended|Self-contained static file server. Set `$caseDir` at the top. See [Running the server locally](#running-the-server-locally-windows).|
 |`index.html`|no|Landing page linking to both apps.|
 |`Cases/*.zip`|yes|Your case data — see below.|
 |`Cases/index.html`|recommended|File list for servers with no directory index. Once it exists it **overrides** directory listing on every server, local included. Rebuilt automatically on save when folder access is granted.|
@@ -78,6 +101,9 @@ will not work — see [Troubleshooting](#troubleshooting).
 |`OrphanedBins/`|auto|Holds `OrphanedBins.zip`. Sibling of `Cases/`, created on demand.|
 |`Tools/`|no|Local-only helper scripts. Never deployed.|
 |`.github/`|no|README screenshots. Repo furniture — not part of a deployment. Hidden from GitHub's file listing by the leading dot.|
+|`.gitignore`|no|Keeps backups, orphans, scraper output and OS clutter out of the repo.|
+|`caseserver.log`|auto|Written by the bundled server. Truncated on each start.|
+|`caseserver.err.log`|auto|Startup and request errors from the bundled server.|
 |`Tools/make-index.bat`|no|Windows helper that regenerates `Cases/index.html`. Local use only — never copied to a server.|
 |`Tools/make-index.ps1`|no|Does the actual work; the `.bat` calls it. Its `$CasesFolder` setting points at `..\Cases` by default.|
 
@@ -94,10 +120,17 @@ If some zips fail to parse, the rest still load and a banner names the ones skip
 If nothing loads at all, the last cached copy in that browser is shown with a warning.
 
 **Directory listing required.** Folder discovery works because the web server returns
-an index for `Cases/`. Python's `http.server` generates one — but **only while the
-folder contains no `index.html` of its own.** Add one and Python serves that file
-instead, which makes it the source of truth locally as well as on Home Assistant.
-`/local/` never generates a listing, so there the file is mandatory.
+an index for `Cases/`. What that means depends on the server:
+
+|Server|Behaviour|
+|-|-|
+|`CaseCreator_Server_Port_6040.ps1` (bundled)|**Never generates a listing.** It returns `index.html` for a directory, or 404. So `Cases/index.html` is **mandatory** — without it no cases load at all, and nothing is logged.|
+|Python `http.server`|Generates one, but **only while the folder contains no `index.html` of its own.** Add one and Python serves that file instead, making it the source of truth.|
+|Home Assistant `/local/`|Never generates a listing. The file is mandatory.|
+
+In short: once `Cases/index.html` exists it is authoritative everywhere, and with the
+bundled server it is required from the start. Case Creator writes it for you after
+every save when folder access is granted; otherwise run `Tools/make-index.bat`.
 
 The practical consequence: **a stale `Cases/index.html` hides cases on every server.**
 The zip sits in the folder and simply never appears, with nothing logged. Case Creator
@@ -453,7 +486,7 @@ One extra write, worth explaining because it is the only file the app creates th
 not yours: `.casecreator-folder-check` in the install directory.
 
 The browser's permission prompt names the folder you picked, but only its **name** -
-`Case Creator REDUX`, not its path. Two copies of the project share a name, and a saved
+`Case Creator Live`, not its path. Two copies of the project can share a name, and a saved
 grant outlives the server being repointed at a different folder entirely. Get that wrong
 and the app reads cases over HTTP from one folder while writing saves and backups into
 another, silently.
@@ -474,7 +507,23 @@ inert, delete it.
 |`<install>/Cases/<Case Name>.zip`|**Save Case** - read so it can be copied to `Backup/`.|
 |`<install>/OrphanedBins/OrphanedBins.zip`|**Show Orphaned Parts**, and **Save Case** when merging parked bins.|
 |`<install>/Cases/` (listing)|**Save Case** - enumerated to rebuild `index.html`. Filenames only; the zips are not opened.|
-|`<install>/.casecreator-folder-check`|**Grant folder access**, and once per session on the saved grant. A short random token is written, read back over HTTP, then the file is deleted. See below.|
+|`<install>/.casecreator-folder-check`|**Grant folder access**, and once per session on the saved grant. A short random token is written, read back over HTTP, then the file is deleted. See [The folder check](#the-folder-check).|
+
+### Writes by the bundled server
+
+Separate from the apps entirely - this is `CaseCreator_Server_Port_6040.ps1`, not
+anything the browser does:
+
+|Path|What is written|
+|-|-|
+|`<install>/caseserver.log`|One line per start naming the folder being served, then a line per HTTP request. Truncated each time the server starts.|
+|`<install>/caseserver.err.log`|Startup failures and per-request errors. Appended, never truncated.|
+
+**Both sit inside the served folder, so both are reachable over HTTP** - anyone who can
+open the app can also read `http://<host>:6040/caseserver.log` and see every request
+made. Nothing secret is in there, but it is a browsing history of your own use. Move the
+`.ps1` and its logs outside the served folder if that matters; the script writes them
+beside itself.
 
 ### Writes without folder access - downloads only
 
@@ -515,7 +564,7 @@ already saved into `Cases/` is untouched.
 - **No accounts, no login, no credentials** stored or transmitted.
 - **Nothing is ever deleted.** Not old backups, not orphaned bins, not cases. Every removal is a manual job.
 - **Nothing outside the granted folder is touched.** The browser enforces the boundary.
-- **No server-side code.** Both apps are static files; the web server only ever serves them.
+- **No server-side code in the apps.** Both are static files the web server only hands out. The bundled `.ps1` is a plain file server - it reads files and writes its own two logs, and never touches your case data.
 
 ### Tools/make-index.bat and Tools/make-index.ps1
 

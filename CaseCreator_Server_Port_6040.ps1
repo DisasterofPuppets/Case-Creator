@@ -1,4 +1,4 @@
-$caseDir = "K:\WIP Projects\Case Creator REDUX"
+$caseDir = "D:\Path\To\Case Creator Live"
 $port    = 6040
 
 $logFile = "$caseDir\caseserver.log"
